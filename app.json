@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "CampusSync",
+    "slug": "campussync-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
+    "android": { "package": "com.campussync.mobile" },
+    "plugins": []
+  }
+}
