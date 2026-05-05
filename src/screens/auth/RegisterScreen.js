@@ -7,12 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { checkPasswordStrength } from '../../services/api';
 import { COLORS, SPACING, RADIUS } from '../../theme';
-
-const ROLES = [
-  { id: 'student', label: 'Student', icon: 'school-outline', desc: 'Discover & join events' },
-  { id: 'organizer', label: 'Organizer', icon: 'megaphone-outline', desc: 'Create & manage events' },
-];
 
 const GENDERS = [
   { id: 'male', label: 'Male', icon: 'man-outline' },
@@ -28,7 +24,6 @@ export default function RegisterScreen({ navigation }) {
     password: '', confirmPassword: '',
     branch: '', semester: '',
   });
-  const [role, setRole] = useState('student');
   const [gender, setGender] = useState('female');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,15 +43,18 @@ export default function RegisterScreen({ navigation }) {
     setErrors(p => ({ ...p, [key]: null }));
   };
 
+  const passwordStrength = checkPasswordStrength(form.password);
+
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Full name is required';
     if (!form.username.trim()) e.username = 'Username is required';
-    else if (form.username.includes(' ')) e.username = 'No spaces allowed in username';
+    else if (form.username.includes(' ')) e.username = 'No spaces allowed';
     if (!form.email.trim()) e.email = 'Email is required';
     else if (!form.email.toLowerCase().endsWith('@bmsce.ac.in')) e.email = 'Only @bmsce.ac.in emails allowed';
+    else if (form.email.toLowerCase().includes('admin')) e.email = 'Admin accounts are pre-registered. Use Login.';
     if (!form.password) e.password = 'Password required';
-    else if (form.password.length < 6) e.password = 'Min 6 characters';
+    else if (!passwordStrength.isStrong) e.password = 'Password is too weak';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (!form.branch.trim()) e.branch = 'Branch is required';
     setErrors(e);
@@ -67,7 +65,7 @@ export default function RegisterScreen({ navigation }) {
     if (!validate()) return;
     setLoading(true);
     try {
-      await register({ ...form, role, gender, college: 'BMSCE' });
+      await register({ ...form, gender, role: 'student', college: 'BMSCE' });
     } catch (err) {
       Alert.alert('Registration Failed', err.message || 'Please try again.');
     } finally {
@@ -75,37 +73,11 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  const InputField = ({ label, icon, field, placeholder, secure, keyboard }) => (
-    <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputWrap, errors[field] && styles.inputError]}>
-        <Ionicons name={icon} size={17} color={errors[field] ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder={placeholder}
-          placeholderTextColor={COLORS.textTertiary}
-          value={form[field]}
-          onChangeText={t => set(field, t)}
-          secureTextEntry={secure && !showPwd}
-          keyboardType={keyboard || 'default'}
-          autoCapitalize={field === 'email' || field === 'username' ? 'none' : 'words'}
-          autoCorrect={false}
-        />
-        {secure && (
-          <TouchableOpacity onPress={() => setShowPwd(v => !v)}>
-            <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={17} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-        )}
-      </View>
-      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
-    </View>
-  );
-
   return (
     <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 40 }]}
+          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -113,30 +85,67 @@ export default function RegisterScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
-            <Text style={styles.headline}>Create Account 🎓</Text>
-            <Text style={styles.subtext}>Only for BMSCE students · @bmsce.ac.in only</Text>
-          </Animated.View>
-
-          {/* Role Selector */}
-          <Animated.View style={[styles.roleRow, { opacity: fadeAnim }]}>
-            {ROLES.map(r => (
-              <TouchableOpacity key={r.id} style={[styles.roleCard, role === r.id && styles.roleCardActive]} onPress={() => setRole(r.id)} activeOpacity={0.8}>
-                {role === r.id
-                  ? <LinearGradient colors={COLORS.gradientPrimary} style={styles.roleIconWrap}><Ionicons name={r.icon} size={20} color="#fff" /></LinearGradient>
-                  : <View style={[styles.roleIconWrap, { backgroundColor: COLORS.bgInput }]}><Ionicons name={r.icon} size={20} color={COLORS.textTertiary} /></View>
-                }
-                <Text style={[styles.roleLabel, role === r.id && { color: COLORS.textPrimary }]}>{r.label}</Text>
-                <Text style={styles.roleDesc}>{r.desc}</Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={styles.headline}>Create Student Account 🎓</Text>
+            <Text style={styles.subtext}>Only @bmsce.ac.in emails allowed · Admins are pre-registered</Text>
           </Animated.View>
 
           <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-            <InputField label="Full Name *" icon="person-outline" field="name" placeholder="Aastha Sharma" />
-            <InputField label="Username *" icon="at-outline" field="username" placeholder="aastha_bmsce" />
-            <InputField label="BMSCE Email *" icon="mail-outline" field="email" placeholder="aastha@bmsce.ac.in" keyboard="email-address" />
+            {/* Full Name */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Full Name *</Text>
+              <View style={[styles.inputWrap, errors.name && styles.inputError]}>
+                <Ionicons name="person-outline" size={17} color={errors.name ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Aastha Sharma"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={form.name}
+                  onChangeText={t => set('name', t)}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+              </View>
+              {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+            </View>
 
-            {/* Gender Selector */}
+            {/* Username */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Username *</Text>
+              <View style={[styles.inputWrap, errors.username && styles.inputError]}>
+                <Ionicons name="at-outline" size={17} color={errors.username ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="aastha_bmsce"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={form.username}
+                  onChangeText={t => set('username', t)}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+            </View>
+
+            {/* Email */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>BMSCE Email *</Text>
+              <View style={[styles.inputWrap, errors.email && styles.inputError]}>
+                <Ionicons name="mail-outline" size={17} color={errors.email ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="aastha@bmsce.ac.in"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={form.email}
+                  onChangeText={t => set('email', t)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            </View>
+
+            {/* Gender */}
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Gender</Text>
               <View style={styles.genderRow}>
@@ -173,8 +182,82 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-            <InputField label="Password *" icon="lock-closed-outline" field="password" placeholder="Min. 6 characters" secure />
-            <InputField label="Confirm Password *" icon="lock-closed-outline" field="confirmPassword" placeholder="Repeat password" secure />
+            {/* Password */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Password *</Text>
+              <View style={[styles.inputWrap, errors.password && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={17} color={errors.password ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Min. 8 chars, mixed case, number, symbol"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={form.password}
+                  onChangeText={t => set('password', t)}
+                  secureTextEntry={!showPwd}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity onPress={() => setShowPwd(v => !v)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={17} color={COLORS.textTertiary} />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            </View>
+
+            {/* Password strength meter */}
+            {form.password.length > 0 && (
+              <View style={styles.strengthBlock}>
+                <View style={styles.strengthBarRow}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.strengthSeg,
+                        { backgroundColor: i <= passwordStrength.score ? passwordStrength.color : COLORS.bgInput }
+                      ]}
+                    />
+                  ))}
+                  <Text style={[styles.strengthLabel, { color: passwordStrength.color }]}>{passwordStrength.label}</Text>
+                </View>
+                <View style={styles.strengthChecks}>
+                  {[
+                    { key: 'length', label: '8+ characters' },
+                    { key: 'uppercase', label: 'Uppercase' },
+                    { key: 'lowercase', label: 'Lowercase' },
+                    { key: 'number', label: 'Number' },
+                    { key: 'special', label: 'Special char' },
+                  ].map(c => (
+                    <View key={c.key} style={styles.strengthCheckItem}>
+                      <Ionicons
+                        name={passwordStrength.checks[c.key] ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={11}
+                        color={passwordStrength.checks[c.key] ? COLORS.accent : COLORS.textTertiary}
+                      />
+                      <Text style={[styles.strengthCheckText, passwordStrength.checks[c.key] && { color: COLORS.accent }]}>{c.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Confirm Password */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Confirm Password *</Text>
+              <View style={[styles.inputWrap, errors.confirmPassword && styles.inputError]}>
+                <Ionicons name="lock-closed-outline" size={17} color={errors.confirmPassword ? COLORS.danger : COLORS.textTertiary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Repeat password"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={form.confirmPassword}
+                  onChangeText={t => set('confirmPassword', t)}
+                  secureTextEntry={!showPwd}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+            </View>
 
             <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.85} style={styles.btnWrap}>
               <LinearGradient colors={COLORS.gradientPrimary} style={styles.btn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
@@ -186,7 +269,7 @@ export default function RegisterScreen({ navigation }) {
 
           <View style={styles.loginWrap}>
             <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
@@ -202,12 +285,6 @@ const styles = StyleSheet.create({
   backBtn: { marginBottom: SPACING.lg, width: 40 },
   headline: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 6 },
   subtext: { fontSize: 14, color: COLORS.textSecondary, marginBottom: SPACING.lg },
-  roleRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
-  roleCard: { flex: 1, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.bgCardBorder, padding: SPACING.md, alignItems: 'center', gap: 6 },
-  roleCardActive: { borderColor: COLORS.primary, backgroundColor: 'rgba(139,92,246,0.12)' },
-  roleIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  roleLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
-  roleDesc: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center' },
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.bgCardBorder, padding: SPACING.lg, marginBottom: SPACING.lg },
   fieldGroup: { marginBottom: SPACING.md },
   row: { flexDirection: 'row', marginBottom: SPACING.md },
@@ -221,6 +298,16 @@ const styles = StyleSheet.create({
   genderChip: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   genderChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   genderText: { fontSize: 13, fontWeight: '600', color: COLORS.textTertiary },
+
+  // Password strength
+  strengthBlock: { marginTop: -SPACING.sm, marginBottom: SPACING.md, padding: 10, backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+  strengthSeg: { flex: 1, height: 4, borderRadius: 2 },
+  strengthLabel: { fontSize: 11, fontWeight: '700', marginLeft: 6, minWidth: 50 },
+  strengthChecks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  strengthCheckItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  strengthCheckText: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '500' },
+
   btnWrap: { borderRadius: RADIUS.md, overflow: 'hidden', marginTop: SPACING.sm, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
   btn: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md },
   btnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
