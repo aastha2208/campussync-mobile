@@ -196,6 +196,8 @@ export default function HomeScreen({ navigation }) {
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [allEventsForSearch, setAllEventsForSearch] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -233,6 +235,11 @@ export default function HomeScreen({ navigation }) {
   }, [category, club, sortBy, searchQuery, user?.isAdmin, user?.clubName]);
 
   useEffect(() => { load(); }, [category, club, sortBy, searchQuery]);
+
+  // Fetch all events once for suggestions
+  useEffect(() => {
+    eventsAPI.getAll({}).then(res => setAllEventsForSearch(res.events || []));
+  }, []);
 
   // STUDENT REMINDERS: fetch all events independently (ignore filters)
   useEffect(() => {
@@ -306,32 +313,180 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Search bar */}
-        <View style={[styles.searchBar, searchActive && styles.searchBarActive]}>
-          <Ionicons name="search-outline" size={18} color={searchActive ? COLORS.primary : COLORS.textTertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search events, clubs, tags..."
-            placeholderTextColor={COLORS.textTertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onFocus={() => setSearchActive(true)}
-            onBlur={() => setSearchActive(false)}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
-          />
+        {/* Search bar — tap opens fullscreen search modal */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setSearchActive(true)}
+          style={[styles.searchBar, searchActive && styles.searchBarActive]}
+        >
+          <Ionicons name="search-outline" size={18} color={COLORS.textTertiary} />
+          <View style={{ flex: 1 }}>
+            {searchQuery
+              ? <Text style={[styles.searchInput, { paddingVertical: 0 }]} numberOfLines={1}>{searchQuery}</Text>
+              : <Text style={styles.searchPlaceholder}>Search events, clubs, tags...</Text>
+            }
+          </View>
           {searchQuery.length > 0 ? (
             <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => setFilterModalVisible(true)} style={[styles.filterBtn, filtersActive && styles.filterBtnActive]}>
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation && e.stopPropagation(); setFilterModalVisible(true); }}
+              style={[styles.filterBtn, filtersActive && styles.filterBtnActive]}
+            >
               <Ionicons name="options-outline" size={16} color={filtersActive ? '#fff' : COLORS.primary} />
               {filtersActive && <View style={styles.filterBtnDot} />}
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
+
+        {/* Fullscreen search modal */}
+        <Modal visible={searchActive} animationType="slide" transparent={false} onRequestClose={() => setSearchActive(false)}>
+          <View style={[styles.searchModal, { paddingTop: insets.top }]}>
+            <View style={styles.searchModalHeader}>
+              <TouchableOpacity onPress={() => setSearchActive(false)} style={styles.searchModalBack}>
+                <Ionicons name="arrow-back" size={22} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+              <View style={[styles.searchBar, styles.searchBarActive, { flex: 1, marginHorizontal: 0, marginBottom: 0 }]}>
+                <Ionicons name="search-outline" size={18} color={COLORS.primary} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search events, clubs, tags..."
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoFocus
+                  onSubmitEditing={() => {
+                    if (searchQuery.trim() && !recentSearches.includes(searchQuery.trim())) {
+                      setRecentSearches(prev => [searchQuery.trim(), ...prev.slice(0, 4)]);
+                    }
+                    setSearchActive(false);
+                  }}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  returnKeyType="search"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {searchQuery.length === 0 ? (
+                <>
+                  {recentSearches.length > 0 && (
+                    <>
+                      <View style={styles.suggestionHeader}>
+                        <Ionicons name="time-outline" size={12} color={COLORS.textTertiary} />
+                        <Text style={styles.suggestionHeaderText}>Recent</Text>
+                        <TouchableOpacity onPress={() => setRecentSearches([])} style={{ marginLeft: 'auto' }}>
+                          <Text style={styles.clearAllText}>Clear</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {recentSearches.map((s, i) => (
+                        <TouchableOpacity key={i} style={styles.suggestionRow} onPress={() => { setSearchQuery(s); setSearchActive(false); }}>
+                          <Ionicons name="time-outline" size={15} color={COLORS.textTertiary} />
+                          <Text style={styles.suggestionText}>{s}</Text>
+                          <Ionicons name="arrow-up-back-outline" size={14} color={COLORS.textTertiary} style={{ marginLeft: 'auto' }} />
+                        </TouchableOpacity>
+                      ))}
+                    </>
+                  )}
+
+                  <View style={styles.suggestionHeader}>
+                    <Ionicons name="flash-outline" size={12} color={COLORS.textTertiary} />
+                    <Text style={styles.suggestionHeaderText}>Quick filters</Text>
+                  </View>
+                  <View style={styles.quickFilters}>
+                    {['Free', 'This Week', 'Tech', 'Cultural', 'Sports'].map(qf => (
+                      <TouchableOpacity key={qf} style={styles.quickFilterChip} onPress={() => { setSearchQuery(qf.toLowerCase()); setSearchActive(false); }}>
+                        <Text style={styles.quickFilterText}>{qf}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {allEventsForSearch.length > 0 && (
+                    <>
+                      <View style={styles.suggestionHeader}>
+                        <Ionicons name="trending-up-outline" size={12} color={COLORS.textTertiary} />
+                        <Text style={styles.suggestionHeaderText}>Popular events</Text>
+                      </View>
+                      {allEventsForSearch
+                        .slice()
+                        .sort((a, b) => (b.registeredCount || 0) - (a.registeredCount || 0))
+                        .slice(0, 3)
+                        .map(ev => (
+                          <TouchableOpacity key={ev._id} style={styles.suggestionRow} onPress={() => { setSearchActive(false); navigation.navigate('EventDetail', { event: ev }); }}>
+                            <View style={styles.suggestionEventIcon}>
+                              <Ionicons name="flame" size={13} color={COLORS.warning} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.suggestionText} numberOfLines={1}>{ev.title}</Text>
+                              <Text style={styles.suggestionSub}>{ev.club} · {ev.registeredCount} registered</Text>
+                            </View>
+                            <Ionicons name="arrow-forward" size={14} color={COLORS.textTertiary} />
+                          </TouchableOpacity>
+                        ))}
+                    </>
+                  )}
+                </>
+              ) : (
+                (() => {
+                  const q = searchQuery.toLowerCase();
+                  const matches = allEventsForSearch.filter(e =>
+                    e.title.toLowerCase().includes(q) ||
+                    e.description.toLowerCase().includes(q) ||
+                    e.club.toLowerCase().includes(q) ||
+                    e.tags.some(t => t.toLowerCase().includes(q)) ||
+                    e.category.toLowerCase().includes(q)
+                  ).slice(0, 8);
+
+                  if (matches.length === 0) {
+                    return (
+                      <View style={styles.noSuggestion}>
+                        <Ionicons name="search-outline" size={32} color={COLORS.textTertiary} />
+                        <Text style={styles.noSuggestionText}>No events found for "{searchQuery}"</Text>
+                        <Text style={styles.noSuggestionHint}>Try different keywords</Text>
+                      </View>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <View style={styles.suggestionHeader}>
+                        <Ionicons name="search-outline" size={12} color={COLORS.textTertiary} />
+                        <Text style={styles.suggestionHeaderText}>{matches.length} match{matches.length > 1 ? 'es' : ''}</Text>
+                      </View>
+                      {matches.map(ev => (
+                        <TouchableOpacity key={ev._id} style={styles.suggestionRow} onPress={() => {
+                          setSearchActive(false);
+                          if (!recentSearches.includes(searchQuery.trim())) {
+                            setRecentSearches(prev => [searchQuery.trim(), ...prev.slice(0, 4)]);
+                          }
+                          navigation.navigate('EventDetail', { event: ev });
+                        }}>
+                          <View style={[styles.suggestionEventIcon, { backgroundColor: COLORS.primary + '22' }]}>
+                            <Ionicons name="calendar" size={13} color={COLORS.primary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.suggestionText} numberOfLines={1}>{ev.title}</Text>
+                            <Text style={styles.suggestionSub} numberOfLines={1}>{ev.club} · {ev.category}</Text>
+                          </View>
+                          <Ionicons name="arrow-forward" size={14} color={COLORS.textTertiary} />
+                        </TouchableOpacity>
+                      ))}
+                    </>
+                  );
+                })()
+              )}
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </Modal>
 
         {/* Active filters display */}
         {filtersActive && (
@@ -565,6 +720,29 @@ const styles = StyleSheet.create({
   searchBarActive: { borderColor: COLORS.primary + '88', backgroundColor: COLORS.primary + '11' },
   searchInput: { flex: 1, color: COLORS.textPrimary, fontSize: 14, paddingVertical: 10 },
   searchPlaceholder: { flex: 1, color: COLORS.textTertiary, fontSize: 14 },
+
+  // Search Modal (fullscreen)
+  searchModal: { flex: 1, backgroundColor: COLORS.bg },
+  searchModalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: SPACING.lg, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
+  searchModalBack: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+
+  // Autocomplete dropdown
+  suggestionsDropdown: { position: 'absolute', top: 56, left: SPACING.lg, right: SPACING.lg, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.bgCardBorder, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 16, zIndex: 100, maxHeight: 460 },
+  suggestionHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8 },
+  suggestionHeaderText: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  clearAllText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
+  suggestionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  suggestionEventIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.warning + '22', alignItems: 'center', justifyContent: 'center' },
+  suggestionText: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  suggestionSub: { fontSize: 11, color: COLORS.textTertiary, marginTop: 1 },
+  quickFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 14, paddingVertical: 4 },
+  quickFilterChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.full, backgroundColor: COLORS.primary + '22', borderWidth: 1, borderColor: COLORS.primary + '44' },
+  quickFilterText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
+  noSuggestion: { alignItems: 'center', paddingVertical: 20, gap: 4 },
+  noSuggestionText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  noSuggestionHint: { fontSize: 11, color: COLORS.textTertiary },
+  dismissBtn: { paddingVertical: 10, alignItems: 'center', borderTopWidth: 1, borderTopColor: COLORS.bgCardBorder, marginTop: 4 },
+  dismissText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '600' },
   filterBtn: { width: 32, height: 32, borderRadius: 9, backgroundColor: COLORS.primary + '22', alignItems: 'center', justifyContent: 'center', position: 'relative' },
   filterBtnActive: { backgroundColor: COLORS.primary },
   filterBtnDot: { position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.warning, borderWidth: 1, borderColor: '#fff' },

@@ -314,6 +314,32 @@ let MOCK_NOTIFICATIONS = [
   { _id: 'n2', title: 'Event Reminder', body: 'Book Club: Sapiens Discussion is in 4 days.', type: 'reminder', read: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
 ];
 
+// ─── PASSWORD STORE (in-memory + AsyncStorage persistence) ───────────────────
+// Pre-provisioned admin passwords (their default password is "admin123")
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
+
+// In-memory user store
+let REGISTERED_USERS = {}; // { email: { password, name, branch, semester, gender, registeredAt } }
+
+// Load registered users from AsyncStorage on startup
+const loadUsersFromStorage = async () => {
+  try {
+    const stored = await AsyncStorage.getItem('cs_registered_users');
+    if (stored) REGISTERED_USERS = JSON.parse(stored);
+  } catch (e) {
+    console.log('Could not load users:', e);
+  }
+};
+loadUsersFromStorage();
+
+const saveUsersToStorage = async () => {
+  try {
+    await AsyncStorage.setItem('cs_registered_users', JSON.stringify(REGISTERED_USERS));
+  } catch (e) {
+    console.log('Could not save users:', e);
+  }
+};
+
 // ─── AUTH API ────────────────────────────────────────────────────────────────
 export const authAPI = {
   login: async (email, password, role) => {
@@ -321,49 +347,88 @@ export const authAPI = {
       const res = await api.post('/api/auth/login', { email, password, role });
       return res.data;
     } catch {
-      if (email && password.length >= 6) {
-        const isAdmin = isAdminEmail(email);
+      const cleanEmail = (email || '').toLowerCase().trim();
 
-        // Validate role matches email
-        if (role === 'admin' && !isAdmin) {
-          throw new Error('Only authorized BMSCE club admins can log in as admin.');
-        }
-        if (role !== 'admin' && isAdmin) {
-          throw new Error('This is an admin email. Please select Admin role.');
+      if (!cleanEmail || !password) {
+        throw new Error('Email and password are required.');
+      }
+
+      const isAdmin = isAdminEmail(cleanEmail);
+
+      // Validate role matches email
+      if (role === 'admin' && !isAdmin) {
+        throw new Error('Only authorized BMSCE club admins can log in as admin.');
+      }
+      if (role !== 'admin' && isAdmin) {
+        throw new Error('This is an admin email. Please select Admin role.');
+      }
+
+      // ADMIN AUTHENTICATION
+      if (isAdmin) {
+        // Admins use the default password unless they've changed it
+        const adminCustomPwd = REGISTERED_USERS[cleanEmail]?.password;
+        const expectedPwd = adminCustomPwd || DEFAULT_ADMIN_PASSWORD;
+
+        if (password !== expectedPwd) {
+          throw new Error('Incorrect password. Default admin password is "admin123".');
         }
 
-        const adminInfo = isAdmin ? ADMINS.find(a => a.email === email.toLowerCase()) : null;
-        const club = adminInfo ? getClubById(adminInfo.clubId) : null;
-
-        let displayName;
-        if (isAdmin) {
-          displayName = adminInfo.name;
-        } else {
-          const namePart = email.split('@')[0];
-          displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-        }
+        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
+        const club = getClubById(adminInfo.clubId);
 
         return {
           token: 'mock_jwt_token_' + Date.now(),
           user: {
-            _id: 'u_' + email,
-            name: displayName,
-            email: email.toLowerCase(),
-            role: role || 'student',
-            isAdmin,
-            clubId: adminInfo?.clubId || null,
+            _id: 'u_' + cleanEmail,
+            name: adminInfo.name,
+            email: cleanEmail,
+            role: 'admin',
+            isAdmin: true,
+            clubId: adminInfo.clubId,
             clubName: club?.name || null,
             college: 'BMSCE',
-            branch: isAdmin ? 'Admin' : 'CSE',
-            semester: isAdmin ? '-' : '4',
-            registeredEvents: ['e1', 'e7'],
-            hostedEvents: isAdmin ? MOCK_EVENTS.filter(e => e.clubId === adminInfo.clubId).map(e => e._id) : [],
+            branch: 'Admin',
+            semester: '-',
+            registeredEvents: [],
+            hostedEvents: MOCK_EVENTS.filter(e => e.clubId === adminInfo.clubId).map(e => e._id),
             activityPoints: 0,
             avatar: null,
           },
         };
       }
-      throw new Error('Invalid credentials');
+
+      // STUDENT AUTHENTICATION
+      const userRecord = REGISTERED_USERS[cleanEmail];
+      if (!userRecord) {
+        throw new Error('No account found for this email. Please register first.');
+      }
+
+      if (userRecord.password !== password) {
+        throw new Error('Incorrect password. Please try again.');
+      }
+
+      // Login successful
+      return {
+        token: 'mock_jwt_token_' + Date.now(),
+        user: {
+          _id: 'u_' + cleanEmail,
+          name: userRecord.name || cleanEmail.split('@')[0],
+          email: cleanEmail,
+          role: 'student',
+          isAdmin: false,
+          clubId: null,
+          clubName: null,
+          college: 'BMSCE',
+          branch: userRecord.branch || 'CSE',
+          semester: userRecord.semester || '4',
+          gender: userRecord.gender || 'other',
+          username: userRecord.username || null,
+          registeredEvents: ['e1', 'e7'], // mock pre-registrations for demo
+          hostedEvents: [],
+          activityPoints: 0,
+          avatar: null,
+        },
+      };
     }
   },
 
@@ -372,18 +437,45 @@ export const authAPI = {
       const res = await api.post('/api/auth/register', userData);
       return res.data;
     } catch {
-      // Block admin email signup — admins are pre-provisioned
-      if (isAdminEmail(userData.email)) {
+      const cleanEmail = (userData.email || '').toLowerCase().trim();
+
+      // Block admin email signup
+      if (isAdminEmail(cleanEmail)) {
         throw new Error('This admin account is pre-registered. Please go to Login.');
       }
+
+      // Block re-registration
+      if (REGISTERED_USERS[cleanEmail]) {
+        throw new Error('An account with this email already exists. Please go to Login.');
+      }
+
+      // Save credentials
+      REGISTERED_USERS[cleanEmail] = {
+        password: userData.password,
+        name: userData.name,
+        username: userData.username,
+        branch: userData.branch,
+        semester: userData.semester,
+        gender: userData.gender,
+        registeredAt: new Date().toISOString(),
+      };
+      await saveUsersToStorage();
+
       return {
         token: 'mock_jwt_token_' + Date.now(),
         user: {
-          _id: 'u_' + Date.now(),
-          ...userData,
+          _id: 'u_' + cleanEmail,
+          name: userData.name,
+          username: userData.username,
+          email: cleanEmail,
+          role: 'student',
           isAdmin: false,
           clubId: null,
           clubName: null,
+          branch: userData.branch,
+          semester: userData.semester,
+          gender: userData.gender,
+          college: 'BMSCE',
           registeredEvents: [],
           hostedEvents: [],
           activityPoints: 0,
@@ -426,6 +518,67 @@ export const eventsAPI = {
   getById: async (id) => {
     try { const res = await api.get(`/api/events/${id}`); return res.data; }
     catch { return MOCK_EVENTS.find(e => e._id === id) || null; }
+  },
+
+  // Check room/venue conflicts before creating event
+  // Now supports time ranges (start time + end time) for accurate overlap detection
+  checkRoomConflict: async ({ location, date, time, endTime, excludeEventId = null }) => {
+    if (!location || !date || !time) return { hasConflict: false, conflicts: [] };
+
+    const eventDate = new Date(date);
+    const dateKey = `${eventDate.getFullYear()}-${eventDate.getMonth()}-${eventDate.getDate()}`;
+
+    // Parse time string like "10:00 AM" to minutes from midnight
+    const parseTime = (t) => {
+      if (!t) return 0;
+      const match = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (!match) return 0;
+      let hour = parseInt(match[1]);
+      const min = parseInt(match[2]);
+      const ampm = (match[3] || '').toUpperCase();
+      if (ampm === 'PM' && hour !== 12) hour += 12;
+      if (ampm === 'AM' && hour === 12) hour = 0;
+      return hour * 60 + min;
+    };
+
+    const requestedStart = parseTime(time);
+    let requestedEnd = endTime ? parseTime(endTime) : requestedStart + 180; // fallback: 3 hours
+    if (requestedEnd <= requestedStart) requestedEnd = requestedStart + 180; // sanity check
+
+    const conflicts = MOCK_EVENTS.filter(e => {
+      if (excludeEventId && e._id === excludeEventId) return false;
+
+      // Match venue (case-insensitive, trimmed)
+      const sameVenue = e.location && location &&
+        e.location.toLowerCase().trim() === location.toLowerCase().trim();
+      if (!sameVenue) return false;
+
+      // Match same day
+      const ed = new Date(e.date);
+      const otherKey = `${ed.getFullYear()}-${ed.getMonth()}-${ed.getDate()}`;
+      if (otherKey !== dateKey) return false;
+
+      // Compute time ranges
+      const otherStart = parseTime(e.time);
+      let otherEnd = e.endTime ? parseTime(e.endTime) : otherStart + 180;
+      if (otherEnd <= otherStart) otherEnd = otherStart + 180;
+
+      // Two ranges overlap if: start1 < end2 AND start2 < end1
+      return requestedStart < otherEnd && otherStart < requestedEnd;
+    });
+
+    return {
+      hasConflict: conflicts.length > 0,
+      conflicts: conflicts.map(e => ({
+        _id: e._id,
+        title: e.title,
+        club: e.club,
+        time: e.time,
+        endTime: e.endTime,
+        date: e.date,
+        location: e.location,
+      })),
+    };
   },
 
   // ADMIN ONLY — must be from same club as event

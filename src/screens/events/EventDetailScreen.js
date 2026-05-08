@@ -164,7 +164,7 @@ export default function EventDetailScreen({ navigation, route }) {
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 200 + insets.bottom }}
       >
         <View style={styles.imageContainer}>
           <Animated.Image source={{ uri: event.imageUrl }} style={[styles.heroImage, { transform: [{ scale: imageScale }] }]} />
@@ -262,7 +262,7 @@ export default function EventDetailScreen({ navigation, route }) {
       </Animated.ScrollView>
 
       {/* Bottom CTA */}
-      <View style={[styles.bottomCTA, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={styles.bottomCTA}>
         <View style={styles.ctaPrice}>
           {event.price > 0 ? (
             <>
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   orgName: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 2 },
   orgEmail: { fontSize: 12, color: COLORS.textTertiary },
   contactBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.primary + '22', alignItems: 'center', justifyContent: 'center' },
-  bottomCTA: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.bgCardBorder, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  bottomCTA: { position: 'absolute', bottom: 88, left: 0, right: 0, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.bgCardBorder, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, zIndex: 10 },
   ctaPrice: { flex: 0.35 },
   ctaPointsText: { fontSize: 22, fontWeight: '800', color: COLORS.warning },
   ctaFreeLabel: { fontSize: 11, color: COLORS.textTertiary },

@@ -67,7 +67,7 @@ export default function LoginScreen({ navigation }) {
       errs.email = `Use ${selectedClubId}.admin1 or ${selectedClubId}.admin2 format`;
     }
     if (!password) errs.password = 'Password is required';
-    else if (password.length < 6) errs.password = 'Min. 6 characters';
+    else if (password.length < 1) errs.password = 'Password is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -169,7 +169,8 @@ export default function LoginScreen({ navigation }) {
                 <View style={styles.adminEmailHint}>
                   <Ionicons name="information-circle" size={14} color={COLORS.warning} />
                   <Text style={styles.adminEmailHintText}>
-                    Use either: <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin1@bmsce.ac.in</Text> or <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin2@bmsce.ac.in</Text>
+                    Email: <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin1@bmsce.ac.in</Text> or <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin2@bmsce.ac.in</Text>
+                    {'\n'}Default password: <Text style={{ fontWeight: '700' }}>admin123</Text>
                   </Text>
                 </View>
               )}
