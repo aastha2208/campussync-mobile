@@ -108,26 +108,6 @@ function PaymentSuccess({ event, user, onDone }) {
 
   return (
     <View style={[styles.successContainer, { paddingTop: insets.top }]}>
-      {/* Confetti */}
-      {['🎉', '✨', '🎊', '⭐', '🎯'].map((emoji, i) => {
-        const translateY = confettiAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-50, 200],
-        });
-        const left = `${10 + i * 18}%`;
-        return (
-          <Animated.Text
-            key={i}
-            style={[
-              styles.confetti,
-              { left, top: 80, transform: [{ translateY }, { rotate: `${i * 72}deg` }], opacity: confettiAnim },
-            ]}
-          >
-            {emoji}
-          </Animated.Text>
-        );
-      })}
-
       <View style={styles.successContent}>
         <Animated.View style={[styles.successCheckWrap, { transform: [{ scale: checkScale }] }]}>
           <LinearGradient colors={[COLORS.accent, '#059669']} style={styles.successCheck}>
@@ -137,7 +117,7 @@ function PaymentSuccess({ event, user, onDone }) {
 
         <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', width: '100%' }}>
           <Text style={styles.successTitle}>Payment Successful!</Text>
-          <Text style={styles.successSubtitle}>You're registered for the event 🎉</Text>
+          <Text style={styles.successSubtitle}>You're registered for the event</Text>
 
           {/* Receipt */}
           <View style={styles.receipt}>
@@ -156,10 +136,6 @@ function PaymentSuccess({ event, user, onDone }) {
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>Amount Paid</Text>
               <Text style={[styles.receiptValue, { color: COLORS.accent, fontWeight: '800' }]}>₹{event.price}</Text>
-            </View>
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>Activity Points</Text>
-              <Text style={[styles.receiptValue, { color: COLORS.warning }]}>+{event.activityPoints} pts</Text>
             </View>
             <View style={styles.receiptDivider} />
             <View style={styles.receiptRow}>
@@ -238,8 +214,8 @@ export default function PaymentScreen({ navigation, route }) {
       try {
         await eventsAPI.register(event._id, user.email);
         const ids = [...(user.registeredEvents || []), event._id];
-        const newPoints = (user.activityPoints || 0) + (event.activityPoints || 0);
-        updateUser({ registeredEvents: ids, activityPoints: newPoints });
+        // NOTE: activity points awarded only on attendance, not on registration/payment
+        updateUser({ registeredEvents: ids });
         setPaid(true);
       } catch (e) {
         Alert.alert('Payment Failed', 'Please try again.');
@@ -304,7 +280,7 @@ export default function PaymentScreen({ navigation, route }) {
           </View>
           <View style={styles.bonusChip}>
             <Ionicons name="star" size={12} color={COLORS.warning} />
-            <Text style={styles.bonusText}>+{event.activityPoints} Activity Points after payment</Text>
+            <Text style={styles.bonusText}>+{event.activityPoints} Activity Points on attendance</Text>
           </View>
         </View>
 

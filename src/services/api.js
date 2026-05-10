@@ -16,18 +16,18 @@ export const CLUBS = [
 
 // ─── 12 ADMIN EMAILS — 2 per club ────────────────────────────────────────────
 export const ADMINS = [
-  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1' },
-  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2' },
-  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1' },
-  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2' },
-  { email: 'cultural.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1' },
-  { email: 'cultural.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2' },
-  { email: 'sports.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1' },
-  { email: 'sports.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2' },
-  { email: 'photography.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1' },
-  { email: 'photography.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2' },
-  { email: 'literary.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1' },
-  { email: 'literary.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2' },
+  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1', password: 'ieee1.bms@1946' },
+  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2', password: 'ieee2.bms@1946' },
+  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1', password: 'aiml1.bms@1946' },
+  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2', password: 'aiml2.bms@1946' },
+  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1', password: 'cult1.bms@1946' },
+  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2', password: 'cult2.bms@1946' },
+  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1', password: 'spo1.bms@1946' },
+  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2', password: 'spo2.bms@1946' },
+  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1', password: 'photo1.bms@1946' },
+  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2', password: 'photo2.bms@1946' },
+  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1', password: 'lit1.bms@1946' },
+  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2', password: 'lit2.bms@1946' },
 ];
 
 export const ADMIN_EMAILS = ADMINS.map(a => a.email);
@@ -174,33 +174,33 @@ let MOCK_EVENTS = [
     category: 'Cultural', club: 'Cultural Club', clubId: 'cultural', activityPoints: 4,
     date: new Date(Date.now() + 5 * 86400000).toISOString(), time: '05:00 PM',
     location: 'Main Auditorium', price: 100,
-    organizer: { name: 'Cultural Admin 1', email: 'cultural.admin1@bmsce.ac.in' },
+    organizer: { name: 'Cultural Admin 1', email: 'cult.admin1@bmsce.ac.in' },
     maxCapacity: 60, registeredCount: 49, registeredStudents: generateStudents(49),
     tags: ['dance', 'music', 'drama'], imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 3 * 86400000).toISOString(),
-    createdBy: 'cultural.admin1@bmsce.ac.in',
+    createdBy: 'cult.admin1@bmsce.ac.in',
   },
   {
     _id: 'e8', title: 'Open Mic Night', description: 'Stand-up, poetry, music — bring your talent and rock the stage.',
     category: 'Cultural', club: 'Cultural Club', clubId: 'cultural', activityPoints: 2,
     date: new Date(Date.now() + 4 * 86400000).toISOString(), time: '07:00 PM',
     location: 'Open Air Theatre', price: 0,
-    organizer: { name: 'Cultural Admin 2', email: 'cultural.admin2@bmsce.ac.in' },
+    organizer: { name: 'Cultural Admin 2', email: 'cult.admin2@bmsce.ac.in' },
     maxCapacity: 50, registeredCount: 28, registeredStudents: generateStudents(28),
     tags: ['openmic', 'standup'], imageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 3 * 86400000).toISOString(),
-    createdBy: 'cultural.admin2@bmsce.ac.in',
+    createdBy: 'cult.admin2@bmsce.ac.in',
   },
   {
     _id: 'e9', title: 'Battle of Bands', description: 'Inter-college music competition. Form your band and win exciting prizes!',
     category: 'Cultural', club: 'Cultural Club', clubId: 'cultural', activityPoints: 3,
     date: new Date(Date.now() + 11 * 86400000).toISOString(), time: '06:00 PM',
     location: 'Main Stage', price: 150,
-    organizer: { name: 'Cultural Admin 1', email: 'cultural.admin1@bmsce.ac.in' },
+    organizer: { name: 'Cultural Admin 1', email: 'cult.admin1@bmsce.ac.in' },
     maxCapacity: 50, registeredCount: 32, registeredStudents: generateStudents(32),
     tags: ['music', 'bands'], imageUrl: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 9 * 86400000).toISOString(),
-    createdBy: 'cultural.admin1@bmsce.ac.in',
+    createdBy: 'cult.admin1@bmsce.ac.in',
   },
 
   // Sports Committee (3)
@@ -209,33 +209,33 @@ let MOCK_EVENTS = [
     category: 'Sports', club: 'Sports Committee', clubId: 'sports', activityPoints: 3,
     date: new Date(Date.now() + 7 * 86400000).toISOString(), time: '07:00 AM',
     location: 'BMSCE Cricket Ground', price: 50,
-    organizer: { name: 'Sports Admin 1', email: 'sports.admin1@bmsce.ac.in' },
+    organizer: { name: 'Sports Admin 1', email: 'spo.admin1@bmsce.ac.in' },
     maxCapacity: 50, registeredCount: 24, registeredStudents: generateStudents(24),
     tags: ['cricket', 'sports'], imageUrl: 'https://images.unsplash.com/photo-1540747913346-19212a4b423b?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 5 * 86400000).toISOString(),
-    createdBy: 'sports.admin1@bmsce.ac.in',
+    createdBy: 'spo.admin1@bmsce.ac.in',
   },
   {
     _id: 'e11', title: 'Annual Sports Day', description: 'Track, field, swimming and team events. All branches welcome!',
     category: 'Sports', club: 'Sports Committee', clubId: 'sports', activityPoints: 4,
     date: new Date(Date.now() + 14 * 86400000).toISOString(), time: '06:00 AM',
     location: 'BMSCE Sports Complex', price: 0,
-    organizer: { name: 'Sports Admin 2', email: 'sports.admin2@bmsce.ac.in' },
+    organizer: { name: 'Sports Admin 2', email: 'spo.admin2@bmsce.ac.in' },
     maxCapacity: 60, registeredCount: 45, registeredStudents: generateStudents(45),
     tags: ['athletics', 'sports-day'], imageUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 12 * 86400000).toISOString(),
-    createdBy: 'sports.admin2@bmsce.ac.in',
+    createdBy: 'spo.admin2@bmsce.ac.in',
   },
   {
     _id: 'e12', title: 'Basketball Championship', description: '5-a-side basketball tournament. Form a team and dunk your way to victory!',
     category: 'Sports', club: 'Sports Committee', clubId: 'sports', activityPoints: 3,
     date: new Date(Date.now() + 9 * 86400000).toISOString(), time: '04:00 PM',
     location: 'Indoor Sports Hall', price: 100,
-    organizer: { name: 'Sports Admin 1', email: 'sports.admin1@bmsce.ac.in' },
+    organizer: { name: 'Sports Admin 1', email: 'spo.admin1@bmsce.ac.in' },
     maxCapacity: 50, registeredCount: 22, registeredStudents: generateStudents(22),
     tags: ['basketball', 'tournament'], imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-    createdBy: 'sports.admin1@bmsce.ac.in',
+    createdBy: 'spo.admin1@bmsce.ac.in',
   },
 
   // Photography Club (3)
@@ -244,33 +244,33 @@ let MOCK_EVENTS = [
     category: 'Social', club: 'Photography Club', clubId: 'photography', activityPoints: 2,
     date: new Date(Date.now() + 9 * 86400000).toISOString(), time: '06:30 AM',
     location: 'Cubbon Park Main Gate', price: 50,
-    organizer: { name: 'Photography Admin 1', email: 'photography.admin1@bmsce.ac.in' },
+    organizer: { name: 'Photography Admin 1', email: 'photo.admin1@bmsce.ac.in' },
     maxCapacity: 30, registeredCount: 18, registeredStudents: generateStudents(18),
     tags: ['photography', 'heritage'], imageUrl: 'https://images.unsplash.com/photo-1606293926075-69a00dbfde81?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-    createdBy: 'photography.admin1@bmsce.ac.in',
+    createdBy: 'photo.admin1@bmsce.ac.in',
   },
   {
     _id: 'e14', title: 'Astrophotography Night', description: 'Night sky photography session. Telescopes provided.',
     category: 'Workshop', club: 'Photography Club', clubId: 'photography', activityPoints: 3,
     date: new Date(Date.now() + 13 * 86400000).toISOString(), time: '08:00 PM',
     location: 'BMSCE Rooftop', price: 150,
-    organizer: { name: 'Photography Admin 2', email: 'photography.admin2@bmsce.ac.in' },
+    organizer: { name: 'Photography Admin 2', email: 'photo.admin2@bmsce.ac.in' },
     maxCapacity: 25, registeredCount: 14, registeredStudents: generateStudents(14),
     tags: ['astrophotography', 'night'], imageUrl: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 11 * 86400000).toISOString(),
-    createdBy: 'photography.admin2@bmsce.ac.in',
+    createdBy: 'photo.admin2@bmsce.ac.in',
   },
   {
     _id: 'e15', title: 'Photo Exhibition: Campus Stories', description: 'Submit your best campus shots. Top 50 will be exhibited at the foyer.',
     category: 'Cultural', club: 'Photography Club', clubId: 'photography', activityPoints: 2,
     date: new Date(Date.now() + 15 * 86400000).toISOString(), time: '11:00 AM',
     location: 'Main Foyer', price: 0,
-    organizer: { name: 'Photography Admin 1', email: 'photography.admin1@bmsce.ac.in' },
+    organizer: { name: 'Photography Admin 1', email: 'photo.admin1@bmsce.ac.in' },
     maxCapacity: 100, registeredCount: 47, registeredStudents: generateStudents(47),
     tags: ['exhibition', 'campus'], imageUrl: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 13 * 86400000).toISOString(),
-    createdBy: 'photography.admin1@bmsce.ac.in',
+    createdBy: 'photo.admin1@bmsce.ac.in',
   },
 
   // Literary Club (3)
@@ -279,33 +279,33 @@ let MOCK_EVENTS = [
     category: 'Academic', club: 'Literary Club', clubId: 'literary', activityPoints: 4,
     date: new Date(Date.now() + 6 * 86400000).toISOString(), time: '02:00 PM',
     location: 'Seminar Hall 2', price: 50,
-    organizer: { name: 'Literary Admin 1', email: 'literary.admin1@bmsce.ac.in' },
+    organizer: { name: 'Literary Admin 1', email: 'lit.admin1@bmsce.ac.in' },
     maxCapacity: 50, registeredCount: 28, registeredStudents: generateStudents(28),
     tags: ['debate', 'speaking'], imageUrl: 'https://images.unsplash.com/photo-1560523159-4a9692d222f9?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 4 * 86400000).toISOString(),
-    createdBy: 'literary.admin1@bmsce.ac.in',
+    createdBy: 'lit.admin1@bmsce.ac.in',
   },
   {
     _id: 'e17', title: 'Poetry Slam Night', description: 'An evening of original poetry. Perform or just listen — both are welcome.',
     category: 'Cultural', club: 'Literary Club', clubId: 'literary', activityPoints: 2,
     date: new Date(Date.now() + 10 * 86400000).toISOString(), time: '06:30 PM',
     location: 'Library Reading Room', price: 0,
-    organizer: { name: 'Literary Admin 2', email: 'literary.admin2@bmsce.ac.in' },
+    organizer: { name: 'Literary Admin 2', email: 'lit.admin2@bmsce.ac.in' },
     maxCapacity: 60, registeredCount: 22, registeredStudents: generateStudents(22),
     tags: ['poetry', 'spoken-word'], imageUrl: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 8 * 86400000).toISOString(),
-    createdBy: 'literary.admin2@bmsce.ac.in',
+    createdBy: 'lit.admin2@bmsce.ac.in',
   },
   {
     _id: 'e18', title: 'Book Club: Sapiens Discussion', description: 'Group discussion on Yuval Noah Harari\'s Sapiens. Chapters 1-5.',
     category: 'Academic', club: 'Literary Club', clubId: 'literary', activityPoints: 2,
     date: new Date(Date.now() + 4 * 86400000).toISOString(), time: '05:00 PM',
     location: 'Library Group Study Room', price: 0,
-    organizer: { name: 'Literary Admin 1', email: 'literary.admin1@bmsce.ac.in' },
+    organizer: { name: 'Literary Admin 1', email: 'lit.admin1@bmsce.ac.in' },
     maxCapacity: 25, registeredCount: 11, registeredStudents: generateStudents(11),
     tags: ['books', 'discussion'], imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600',
     isFeatured: false, registrationDeadline: new Date(Date.now() + 2 * 86400000).toISOString(),
-    createdBy: 'literary.admin1@bmsce.ac.in',
+    createdBy: 'lit.admin1@bmsce.ac.in',
   },
 ];
 
@@ -363,17 +363,17 @@ export const authAPI = {
         throw new Error('This is an admin email. Please select Admin role.');
       }
 
-      // ADMIN AUTHENTICATION
+      // ADMIN AUTHENTICATION — each admin has their own unique password
       if (isAdmin) {
-        // Admins use the default password unless they've changed it
-        const adminCustomPwd = REGISTERED_USERS[cleanEmail]?.password;
-        const expectedPwd = adminCustomPwd || DEFAULT_ADMIN_PASSWORD;
-
-        if (password !== expectedPwd) {
-          throw new Error('Incorrect password. Default admin password is "admin123".');
+        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
+        if (!adminInfo) {
+          throw new Error('Admin account not found.');
         }
 
-        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
+        if (password !== adminInfo.password) {
+          throw new Error('Incorrect password. Please contact your club coordinator.');
+        }
+
         const club = getClubById(adminInfo.clubId);
 
         return {

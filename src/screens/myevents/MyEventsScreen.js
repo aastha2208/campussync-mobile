@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { eventsAPI } from '../../services/api';
 import EventCard from '../../components/EventCard';
 import { COLORS, SPACING, RADIUS } from '../../theme';
@@ -46,8 +47,8 @@ export default function MyEventsScreen({ navigation }) {
   const load = useCallback(async () => {
     try {
       const [regRes, hostRes] = await Promise.all([
-        eventsAPI.getMyRegistered(),
-        eventsAPI.getMyHosted(),
+        eventsAPI.getMyRegistered(user),
+        eventsAPI.getMyHosted(user),
       ]);
       setRegistered(regRes.events || []);
       setHosted(hostRes.events || []);
@@ -55,9 +56,14 @@ export default function MyEventsScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const onRefresh = () => { setRefreshing(true); load(); };
 

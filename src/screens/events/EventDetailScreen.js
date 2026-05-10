@@ -164,7 +164,7 @@ export default function EventDetailScreen({ navigation, route }) {
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 200 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: (user?.isAdmin ? 110 : 200) + insets.bottom }}
       >
         <View style={styles.imageContainer}>
           <Animated.Image source={{ uri: event.imageUrl }} style={[styles.heroImage, { transform: [{ scale: imageScale }] }]} />
@@ -179,10 +179,12 @@ export default function EventDetailScreen({ navigation, route }) {
               <Ionicons name={catIcon} size={13} color="#fff" />
               <Text style={styles.heroCatText}>{event.category}</Text>
             </View>
-            <View style={styles.heroPointsBadge}>
-              <Ionicons name="star" size={12} color="#fff" />
-              <Text style={styles.heroPointsText}>Earn +{event.activityPoints} pts on attendance</Text>
-            </View>
+            {!user?.isAdmin && (
+              <View style={styles.heroPointsBadge}>
+                <Ionicons name="star" size={12} color="#fff" />
+                <Text style={styles.heroPointsText}>Earn +{event.activityPoints} pts on attendance</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -261,50 +263,50 @@ export default function EventDetailScreen({ navigation, route }) {
         </View>
       </Animated.ScrollView>
 
-      {/* Bottom CTA */}
-      <View style={styles.bottomCTA}>
-        <View style={styles.ctaPrice}>
-          {event.price > 0 ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 1 }}>
-                <Text style={[styles.ctaPointsText, { color: COLORS.accent }]}>₹{event.price}</Text>
-              </View>
-              <Text style={styles.ctaFreeLabel}>+{event.activityPoints} pts on attendance</Text>
-            </>
-          ) : (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name="star" size={16} color={COLORS.warning} />
-                <Text style={styles.ctaPointsText}>+{event.activityPoints}</Text>
-              </View>
-              <Text style={styles.ctaFreeLabel}>pts on attendance · Free</Text>
-            </>
-          )}
-        </View>
-        <TouchableOpacity
-          onPress={handleRegister}
-          disabled={regLoading || (isFull && !registered) || user?.isAdmin}
-          activeOpacity={0.85}
-          style={styles.ctaBtnWrap}
-        >
-          <LinearGradient
-            colors={user?.isAdmin ? ['#475569', '#475569'] : registered ? ['#EF444488', '#EF4444BB'] : isFull ? ['#475569', '#475569'] : COLORS.gradientPrimary}
-            style={styles.ctaBtn}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+      {/* Bottom CTA — only for students */}
+      {!user?.isAdmin && (
+        <View style={styles.bottomCTA}>
+          <View style={styles.ctaPrice}>
+            {event.price > 0 ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 1 }}>
+                  <Text style={[styles.ctaPointsText, { color: COLORS.accent }]}>₹{event.price}</Text>
+                </View>
+                <Text style={styles.ctaFreeLabel}>+{event.activityPoints} pts on attendance</Text>
+              </>
+            ) : (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="star" size={16} color={COLORS.warning} />
+                  <Text style={styles.ctaPointsText}>+{event.activityPoints}</Text>
+                </View>
+                <Text style={styles.ctaFreeLabel}>pts on attendance · Free</Text>
+              </>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={handleRegister}
+            disabled={regLoading || (isFull && !registered)}
+            activeOpacity={0.85}
+            style={styles.ctaBtnWrap}
           >
-            <Ionicons name={user?.isAdmin ? 'shield-checkmark' : registered ? 'close-circle-outline' : isFull ? 'lock-closed-outline' : 'checkmark-circle-outline'} size={20} color="#fff" />
-            <Text style={styles.ctaBtnText}>
-              {user?.isAdmin
-                ? 'Admin View'
-                : regLoading ? 'Processing...'
-                : registered ? 'Unregister'
-                : isFull ? 'Event Full'
-                : event.price > 0 ? `Pay ₹${event.price} & Register`
-                : 'Register & Earn Points'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+            <LinearGradient
+              colors={registered ? ['#EF444488', '#EF4444BB'] : isFull ? ['#475569', '#475569'] : COLORS.gradientPrimary}
+              style={styles.ctaBtn}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name={registered ? 'close-circle-outline' : isFull ? 'lock-closed-outline' : 'checkmark-circle-outline'} size={20} color="#fff" />
+              <Text style={styles.ctaBtnText}>
+                {regLoading ? 'Processing...'
+                  : registered ? 'Unregister'
+                  : isFull ? 'Event Full'
+                  : event.price > 0 ? `Pay ₹${event.price} & Register`
+                  : 'Register & Earn Points'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

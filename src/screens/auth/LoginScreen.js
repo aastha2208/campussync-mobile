@@ -10,6 +10,16 @@ import { useAuth } from '../../context/AuthContext';
 import { CLUBS } from '../../services/api';
 import { COLORS, SPACING, RADIUS } from '../../theme';
 
+// Map clubId to admin email prefix (e.g. 'cultural' club → 'cult.admin' emails)
+const CLUB_EMAIL_PREFIX = {
+  ieee: 'ieee',
+  aiml: 'aiml',
+  cultural: 'cult',
+  sports: 'spo',
+  photography: 'photo',
+  literary: 'lit',
+};
+
 const ROLES = [
   { id: 'student', label: 'Student', icon: 'school', desc: 'Browse & join events' },
   { id: 'admin', label: 'Admin', icon: 'shield-checkmark', desc: 'Manage your club\'s events' },
@@ -40,7 +50,8 @@ export default function LoginScreen({ navigation }) {
   // When admin role + club selected, auto-suggest email format
   useEffect(() => {
     if (role === 'admin' && selectedClubId && !email) {
-      setEmail(`${selectedClubId}.admin1@bmsce.ac.in`);
+      const prefix = CLUB_EMAIL_PREFIX[selectedClubId] || selectedClubId;
+      setEmail(`${prefix}.admin1@bmsce.ac.in`);
     }
   }, [role, selectedClubId]);
 
@@ -63,8 +74,11 @@ export default function LoginScreen({ navigation }) {
     if (role === 'admin' && !selectedClubId) errs.club = 'Please select your club';
     if (!email.trim()) errs.email = 'Email is required';
     else if (!email.toLowerCase().endsWith('@bmsce.ac.in')) errs.email = 'Only @bmsce.ac.in emails allowed';
-    else if (role === 'admin' && selectedClubId && !email.toLowerCase().startsWith(`${selectedClubId}.admin`)) {
-      errs.email = `Use ${selectedClubId}.admin1 or ${selectedClubId}.admin2 format`;
+    else if (role === 'admin' && selectedClubId) {
+      const prefix = CLUB_EMAIL_PREFIX[selectedClubId] || selectedClubId;
+      if (!email.toLowerCase().startsWith(`${prefix}.admin`)) {
+        errs.email = `Use ${prefix}.admin1 or ${prefix}.admin2 format`;
+      }
     }
     if (!password) errs.password = 'Password is required';
     else if (password.length < 1) errs.password = 'Password is required';
@@ -151,7 +165,12 @@ export default function LoginScreen({ navigation }) {
                   return (
                     <TouchableOpacity
                       key={c.id}
-                      onPress={() => { setSelectedClubId(c.id); setEmail(`${c.id}.admin1@bmsce.ac.in`); setErrors(p => ({ ...p, club: null })); }}
+                      onPress={() => {
+                        const prefix = CLUB_EMAIL_PREFIX[c.id] || c.id;
+                        setSelectedClubId(c.id);
+                        setEmail(`${prefix}.admin1@bmsce.ac.in`);
+                        setErrors(p => ({ ...p, club: null }));
+                      }}
                       activeOpacity={0.85}
                       style={[styles.clubCard, { borderColor: active ? c.color : COLORS.bgCardBorder, backgroundColor: active ? c.color + '22' : COLORS.bgCard }]}
                     >
@@ -164,16 +183,6 @@ export default function LoginScreen({ navigation }) {
                 })}
               </View>
               {errors.club && <Text style={styles.errorText}>{errors.club}</Text>}
-
-              {selectedClubId && (
-                <View style={styles.adminEmailHint}>
-                  <Ionicons name="information-circle" size={14} color={COLORS.warning} />
-                  <Text style={styles.adminEmailHintText}>
-                    Email: <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin1@bmsce.ac.in</Text> or <Text style={{ fontWeight: '700' }}>{selectedClubId}.admin2@bmsce.ac.in</Text>
-                    {'\n'}Default password: <Text style={{ fontWeight: '700' }}>admin123</Text>
-                  </Text>
-                </View>
-              )}
             </Animated.View>
           )}
 
@@ -185,7 +194,7 @@ export default function LoginScreen({ navigation }) {
                 <Ionicons name="mail-outline" size={18} color={errors.email ? COLORS.danger : COLORS.textTertiary} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder={role === 'admin' ? `${selectedClubId || 'club'}.admin1@bmsce.ac.in` : 'aastha@bmsce.ac.in'}
+                  placeholder={role === 'admin' ? `${CLUB_EMAIL_PREFIX[selectedClubId] || 'club'}.admin1@bmsce.ac.in` : 'aastha@bmsce.ac.in'}
                   placeholderTextColor={COLORS.textTertiary}
                   value={email}
                   onChangeText={(t) => { setEmail(t); setErrors(p => ({ ...p, email: null })); }}
