@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 // ─── 6 CLUBS at BMSCE ────────────────────────────────────────────────────────
 export const CLUBS = [
@@ -16,18 +16,18 @@ export const CLUBS = [
 
 // ─── 12 ADMIN EMAILS — 2 per club ────────────────────────────────────────────
 export const ADMINS = [
-  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1', password: 'ieee1.bms@1946' },
-  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2', password: 'ieee2.bms@1946' },
-  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1', password: 'aiml1.bms@1946' },
-  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2', password: 'aiml2.bms@1946' },
-  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1', password: 'cult1.bms@1946' },
-  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2', password: 'cult2.bms@1946' },
-  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1', password: 'spo1.bms@1946' },
-  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2', password: 'spo2.bms@1946' },
-  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1', password: 'photo1.bms@1946' },
-  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2', password: 'photo2.bms@1946' },
-  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1', password: 'lit1.bms@1946' },
-  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2', password: 'lit2.bms@1946' },
+  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1' },
+  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2' },
+  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1' },
+  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2' },
+  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1' },
+  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2' },
+  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1' },
+  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2' },
+  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1' },
+  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2' },
+  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1' },
+  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2' },
 ];
 
 export const ADMIN_EMAILS = ADMINS.map(a => a.email);
@@ -315,11 +315,19 @@ let MOCK_NOTIFICATIONS = [
 ];
 
 // ─── PASSWORD STORE (in-memory + AsyncStorage persistence) ───────────────────
-// Pre-provisioned admin passwords (their default password is "admin123")
-const DEFAULT_ADMIN_PASSWORD = 'admin123';
-
 // In-memory user store
-let REGISTERED_USERS = {}; // { email: { password, name, branch, semester, gender, registeredAt } }
+let REGISTERED_USERS = {}; // { email: { passwordHash, name, branch, semester, gender, registeredAt } }
+
+// Lightweight hashing for offline demo mode; production auth must be backend-only.
+const hashPassword = (value) => {
+  const input = String(value || '');
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return `h_${Math.abs(hash)}`;
+};
 
 // Load registered users from AsyncStorage on startup
 const loadUsersFromStorage = async () => {
@@ -363,38 +371,9 @@ export const authAPI = {
         throw new Error('This is an admin email. Please select Admin role.');
       }
 
-      // ADMIN AUTHENTICATION — each admin has their own unique password
+      // ADMIN AUTHENTICATION (mock fallback disabled for security)
       if (isAdmin) {
-        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
-        if (!adminInfo) {
-          throw new Error('Admin account not found.');
-        }
-
-        if (password !== adminInfo.password) {
-          throw new Error('Incorrect password. Please contact your club coordinator.');
-        }
-
-        const club = getClubById(adminInfo.clubId);
-
-        return {
-          token: 'mock_jwt_token_' + Date.now(),
-          user: {
-            _id: 'u_' + cleanEmail,
-            name: adminInfo.name,
-            email: cleanEmail,
-            role: 'admin',
-            isAdmin: true,
-            clubId: adminInfo.clubId,
-            clubName: club?.name || null,
-            college: 'BMSCE',
-            branch: 'Admin',
-            semester: '-',
-            registeredEvents: [],
-            hostedEvents: MOCK_EVENTS.filter(e => e.clubId === adminInfo.clubId).map(e => e._id),
-            activityPoints: 0,
-            avatar: null,
-          },
-        };
+        throw new Error('Admin login is only available via backend API in secure mode.');
       }
 
       // STUDENT AUTHENTICATION
@@ -403,7 +382,7 @@ export const authAPI = {
         throw new Error('No account found for this email. Please register first.');
       }
 
-      if (userRecord.password !== password) {
+      if (userRecord.passwordHash !== hashPassword(password)) {
         throw new Error('Incorrect password. Please try again.');
       }
 
@@ -449,9 +428,9 @@ export const authAPI = {
         throw new Error('An account with this email already exists. Please go to Login.');
       }
 
-      // Save credentials
+      // Save credentials (never persist plaintext password in AsyncStorage)
       REGISTERED_USERS[cleanEmail] = {
-        password: userData.password,
+        passwordHash: hashPassword(userData.password),
         name: userData.name,
         username: userData.username,
         branch: userData.branch,

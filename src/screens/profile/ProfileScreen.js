@@ -297,10 +297,6 @@ export default function ProfileScreen({ navigation }) {
                       <Text style={styles.badgeText}>{user?.branch || 'CSE'}</Text>
                     </View>
                   )}
-                  <View style={styles.badge}>
-                    <Ionicons name="business-outline" size={11} color={COLORS.textTertiary} />
-                    <Text style={styles.badgeText}>{user?.college || 'BMSCE'}</Text>
-                  </View>
                 </View>
               </>
             )}
@@ -363,7 +359,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        <Text style={styles.versionText}>CampusSync v1.0.0 · BMSCE · 2026</Text>
+        <Text style={styles.versionText}>CampusSync v1.0.0 · 2026</Text>
 
         <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />

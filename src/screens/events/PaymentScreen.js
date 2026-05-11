@@ -213,7 +213,7 @@ export default function PaymentScreen({ navigation, route }) {
     setTimeout(async () => {
       try {
         await eventsAPI.register(event._id, user.email);
-        const ids = [...(user.registeredEvents || []), event._id];
+        const ids = Array.from(new Set([...(user.registeredEvents || []), event._id]));
         // NOTE: activity points awarded only on attendance, not on registration/payment
         updateUser({ registeredEvents: ids });
         setPaid(true);
@@ -338,7 +338,7 @@ export default function PaymentScreen({ navigation, route }) {
 
           <View style={styles.secureRow}>
             <Ionicons name="shield-checkmark" size={12} color={COLORS.accent} />
-            <Text style={styles.secureText}>Secured by BMSCE Payment Gateway · 256-bit encryption</Text>
+            <Text style={styles.secureText}>Demo payment simulation for prototype review</Text>
           </View>
         </View>
       </ScrollView>

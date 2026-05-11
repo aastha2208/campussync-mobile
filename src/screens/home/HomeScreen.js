@@ -55,7 +55,6 @@ function ProfileModal({ visible, onClose, user, navigation, logout }) {
       ]
     : [
         { icon: 'calendar-outline', label: 'My Events', color: COLORS.primary, onPress: () => { onClose(); navigation.navigate('MyEvents'); } },
-        { icon: 'star-outline', label: `My Points: ${user?.activityPoints || 0}`, color: COLORS.warning, onPress: () => onClose() },
         { icon: 'notifications-outline', label: 'Notifications', color: COLORS.accent, onPress: () => { onClose(); navigation.navigate('Notifications'); } },
         { icon: 'search-outline', label: 'Search Events', color: COLORS.secondary, onPress: () => { onClose(); navigation.navigate('Search'); } },
         { icon: 'person-outline', label: 'Edit Profile', color: COLORS.info, onPress: () => { onClose(); navigation.navigate('Profile'); } },
@@ -65,58 +64,60 @@ function ProfileModal({ visible, onClose, user, navigation, logout }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
-          <View style={styles.modalUserBlock}>
-            <View style={[styles.modalAvatar, { backgroundColor: avatarColor }]}>
-              <Text style={styles.modalAvatarText}>{initials}</Text>
-              <View style={styles.modalGenderDot}>
-                <Ionicons name={getGenderIcon(user?.gender)} size={10} color="#fff" />
+          <ScrollView
+            showsVerticalScrollIndicator={true}
+            indicatorStyle="white"
+            contentContainerStyle={styles.modalScrollContent}
+          >
+            <View style={styles.modalUserBlock}>
+              <View style={[styles.modalAvatar, { backgroundColor: avatarColor }]}>
+                <Text style={styles.modalAvatarText}>{initials}</Text>
+                <View style={styles.modalGenderDot}>
+                  <Ionicons name={getGenderIcon(user?.gender)} size={10} color="#fff" />
+                </View>
+              </View>
+              <View style={styles.modalUserInfo}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.modalName}>{user?.name || 'Student'}</Text>
+                  {user?.isAdmin && <Ionicons name="shield-checkmark" size={14} color={COLORS.warning} />}
+                </View>
+                <Text style={styles.modalUsername}>@{username}</Text>
+                <Text style={styles.modalEmail}>{user?.email}</Text>
               </View>
             </View>
-            <View style={styles.modalUserInfo}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.modalName}>{user?.name || 'Student'}</Text>
-                {user?.isAdmin && <Ionicons name="shield-checkmark" size={14} color={COLORS.warning} />}
+
+            <View style={styles.modalBadgeRow}>
+              <View style={[styles.modalBadge, { backgroundColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '22', borderColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '44' }]}>
+                <Ionicons name={user?.isAdmin ? 'shield-checkmark-outline' : 'school-outline'} size={11} color={user?.isAdmin ? COLORS.warning : COLORS.primary} />
+                <Text style={[styles.modalBadgeText, { color: user?.isAdmin ? COLORS.warning : COLORS.primary }]}>
+                  {user?.isAdmin ? 'Admin' : user?.role === 'teacher' ? 'Teacher' : 'Student'}
+                </Text>
               </View>
-              <Text style={styles.modalUsername}>@{username}</Text>
-              <Text style={styles.modalEmail}>{user?.email}</Text>
-            </View>
-          </View>
-
-          <View style={styles.modalBadgeRow}>
-            <View style={[styles.modalBadge, { backgroundColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '22', borderColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '44' }]}>
-              <Ionicons name={user?.isAdmin ? 'shield-checkmark-outline' : 'school-outline'} size={11} color={user?.isAdmin ? COLORS.warning : COLORS.primary} />
-              <Text style={[styles.modalBadgeText, { color: user?.isAdmin ? COLORS.warning : COLORS.primary }]}>
-                {user?.isAdmin ? 'Admin' : user?.role === 'teacher' ? 'Teacher' : 'Student'}
-              </Text>
-            </View>
-            <View style={styles.modalBadge}>
-              <Ionicons name="git-branch-outline" size={11} color={COLORS.textTertiary} />
-              <Text style={styles.modalBadgeText}>{user?.branch || 'CSE'} · Sem {user?.semester || 4}</Text>
-            </View>
-            <View style={styles.modalBadge}>
-              <Ionicons name="business-outline" size={11} color={COLORS.textTertiary} />
-              <Text style={styles.modalBadgeText}>BMSCE</Text>
-            </View>
-          </View>
-
-          <View style={styles.modalDivider} />
-
-          {QUICK_ACTIONS.map((a, i) => (
-            <TouchableOpacity key={i} style={styles.modalAction} onPress={a.onPress} activeOpacity={0.7}>
-              <View style={[styles.modalActionIcon, { backgroundColor: a.color + '22' }]}>
-                <Ionicons name={a.icon} size={18} color={a.color} />
+              <View style={styles.modalBadge}>
+                <Ionicons name="git-branch-outline" size={11} color={COLORS.textTertiary} />
+                <Text style={styles.modalBadgeText}>{user?.branch || 'CSE'} · Sem {user?.semester || 4}</Text>
               </View>
-              <Text style={styles.modalActionLabel}>{a.label}</Text>
-              <Ionicons name="chevron-forward" size={14} color={COLORS.textTertiary} />
+            </View>
+
+            <View style={styles.modalDivider} />
+
+            {QUICK_ACTIONS.map((a, i) => (
+              <TouchableOpacity key={i} style={styles.modalAction} onPress={a.onPress} activeOpacity={0.7}>
+                <View style={[styles.modalActionIcon, { backgroundColor: a.color + '22' }]}>
+                  <Ionicons name={a.icon} size={18} color={a.color} />
+                </View>
+                <Text style={styles.modalActionLabel}>{a.label}</Text>
+                <Ionicons name="chevron-forward" size={14} color={COLORS.textTertiary} />
+              </TouchableOpacity>
+            ))}
+
+            <View style={styles.modalDivider} />
+
+            <TouchableOpacity style={styles.modalSignOut} onPress={() => { onClose(); logout(); }} activeOpacity={0.8}>
+              <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
+              <Text style={styles.modalSignOutText}>Sign Out</Text>
             </TouchableOpacity>
-          ))}
-
-          <View style={styles.modalDivider} />
-
-          <TouchableOpacity style={styles.modalSignOut} onPress={() => { onClose(); logout(); }} activeOpacity={0.8}>
-            <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
-            <Text style={styles.modalSignOutText}>Sign Out</Text>
-          </TouchableOpacity>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -804,7 +805,8 @@ const styles = StyleSheet.create({
 
   // Profile modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-start', paddingTop: 100, paddingHorizontal: SPACING.lg },
-  modalCard: { backgroundColor: '#111130', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' },
+  modalCard: { backgroundColor: '#111130', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', maxHeight: '78%' },
+  modalScrollContent: { paddingBottom: 6 },
   modalUserBlock: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, backgroundColor: 'rgba(139,92,246,0.1)' },
   modalAvatar: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 },
   modalAvatarText: { fontSize: 22, fontWeight: '800', color: '#fff' },
