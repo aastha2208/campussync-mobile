@@ -111,10 +111,10 @@ export default function EventDetailScreen({ navigation, route }) {
     try {
       await eventsAPI.register(event._id, user.email);
       setRegistered(true);
-      const ids = Array.from(new Set([...(user.registeredEvents || []), event._id]));
+      const ids = [...(user.registeredEvents || []), event._id];
       // NOTE: activity points are awarded ONLY when admin marks attendance, not on registration
       updateUser({ registeredEvents: ids });
-      showAlert('🎉 Registered!', `You're registered for ${event.title}!\n\n💡 Earn ${event.activityPoints} activity points by attending the event\n\n✉️ Confirmation email sent to ${user.email}`);
+      showAlert('🎉 Registered!', `You're registered for ${event.title}!\n\n💡 Earn ${event.activityPoints} activity points by attending the event.`);
     } catch { showAlert('Error', 'Registration failed.'); }
     finally { setRegLoading(false); }
   };

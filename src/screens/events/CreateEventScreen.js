@@ -105,7 +105,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── DATE PICKER COMPONENT ───────────────────────────────────────────────────
-function DatePickerModal({ visible, onClose, onSelect, selectedDate, minDate, title = 'Select Date' }) {
+function DatePickerModal({ visible, onClose, onSelect, selectedDate, minDate, maxDate, title = 'Select Date' }) {
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -121,11 +121,19 @@ function DatePickerModal({ visible, onClose, onSelect, selectedDate, minDate, ti
   };
 
   const isDisabled = (day) => {
-    if (!minDate) return false;
     const cellDate = new Date(viewYear, viewMonth, day);
-    const min = new Date(minDate);
-    min.setHours(0, 0, 0, 0);
-    return cellDate < min;
+    cellDate.setHours(0, 0, 0, 0);
+    if (minDate) {
+      const min = new Date(minDate);
+      min.setHours(0, 0, 0, 0);
+      if (cellDate < min) return true;
+    }
+    if (maxDate) {
+      const max = new Date(maxDate);
+      max.setHours(0, 0, 0, 0);
+      if (cellDate > max) return true;
+    }
+    return false;
   };
 
   const prevMonth = () => {
@@ -431,7 +439,18 @@ export default function CreateEventScreen({ navigation }) {
     if (!form.date) e.date = 'Date is required';
     if (!form.location.trim()) e.location = 'Venue required';
     if (!form.maxCapacity || isNaN(form.maxCapacity)) e.maxCapacity = 'Valid capacity required';
-    if (!form.registrationDeadline) e.registrationDeadline = 'Deadline required';
+    if (!form.registrationDeadline) {
+      e.registrationDeadline = 'Deadline required';
+    } else if (form.date) {
+      // Deadline MUST be strictly before event date
+      const deadlineDate = new Date(form.registrationDeadline);
+      const eventDate = new Date(form.date);
+      deadlineDate.setHours(0, 0, 0, 0);
+      eventDate.setHours(0, 0, 0, 0);
+      if (deadlineDate >= eventDate) {
+        e.registrationDeadline = 'Deadline must be before the event date';
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -442,9 +461,10 @@ export default function CreateEventScreen({ navigation }) {
     // Block submission if room conflict
     if (roomConflict.hasConflict) {
       const conflict = roomConflict.conflicts[0];
+      const timeRange = conflict.endTime ? `${conflict.time} to ${conflict.endTime}` : `around ${conflict.time}`;
       Alert.alert(
-        '⚠️ Room Booking Conflict',
-        `"${conflict.title}" by ${conflict.club} is already scheduled at ${conflict.location} on this date around ${conflict.time}.\n\nPlease pick a different time or venue.`,
+        '⚠️ Venue Already Occupied',
+        `"${conflict.title}" by ${conflict.club} is using ${conflict.location} from ${timeRange}.\n\nA minimum 1-hour gap is required between events at the same venue. Please pick a different time or venue.`,
         [{ text: 'OK', style: 'default' }]
       );
       return;
@@ -500,6 +520,7 @@ export default function CreateEventScreen({ navigation }) {
         onSelect={(d) => set('registrationDeadline', d)}
         selectedDate={form.registrationDeadline}
         minDate={new Date()}
+        maxDate={form.date ? new Date(new Date(form.date).getTime() - 86400000) : null}
         title="Select Registration Deadline"
       />
       <TimePickerModal
@@ -713,12 +734,15 @@ export default function CreateEventScreen({ navigation }) {
                         {'  '}
                         <Text style={{ fontWeight: '800', color: COLORS.textPrimary }}>"{c.title}"</Text>
                         {' '}by <Text style={{ fontWeight: '700', color: COLORS.warning }}>{c.club}</Text>
-                        {' '}is already using <Text style={{ fontWeight: '700' }}>{c.location}</Text> at{' '}
-                        <Text style={{ fontWeight: '700' }}>{c.time}</Text>.
+                        {' '}is using <Text style={{ fontWeight: '700' }}>{c.location}</Text>{' '}
+                        from <Text style={{ fontWeight: '700' }}>{c.time}</Text>
+                        {c.endTime ? <> to <Text style={{ fontWeight: '700' }}>{c.endTime}</Text></> : null}.
                       </Text>
                     </View>
                   ))}
-                  <Text style={styles.conflictHint}>Please pick a different time or venue to proceed.</Text>
+                  <Text style={styles.conflictHint}>
+                    A minimum 1-hour gap is required between events at the same venue. Please pick a different time or venue.
+                  </Text>
                 </View>
               )}
 

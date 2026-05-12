@@ -37,13 +37,12 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Register saves credentials but does NOT log the user in.
+  // User must explicitly login after registration.
   const register = async (userData) => {
-    const data = await authAPI.register(userData);
-    await AsyncStorage.setItem('cs_token', data.token);
-    await AsyncStorage.setItem('cs_user', JSON.stringify(data.user));
-    setToken(data.token);
-    setUser(data.user);
-    return data;
+    const result = await authAPI.register(userData);
+    // Do NOT set token or user here — student must login manually
+    return result;
   };
 
   const logout = async () => {

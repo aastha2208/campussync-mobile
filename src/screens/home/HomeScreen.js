@@ -64,28 +64,30 @@ function ProfileModal({ visible, onClose, user, navigation, logout }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
-          <ScrollView
-            showsVerticalScrollIndicator={true}
-            indicatorStyle="white"
-            contentContainerStyle={styles.modalScrollContent}
-          >
-            <View style={styles.modalUserBlock}>
-              <View style={[styles.modalAvatar, { backgroundColor: avatarColor }]}>
-                <Text style={styles.modalAvatarText}>{initials}</Text>
-                <View style={styles.modalGenderDot}>
-                  <Ionicons name={getGenderIcon(user?.gender)} size={10} color="#fff" />
-                </View>
-              </View>
-              <View style={styles.modalUserInfo}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.modalName}>{user?.name || 'Student'}</Text>
-                  {user?.isAdmin && <Ionicons name="shield-checkmark" size={14} color={COLORS.warning} />}
-                </View>
-                <Text style={styles.modalUsername}>@{username}</Text>
-                <Text style={styles.modalEmail}>{user?.email}</Text>
+          {/* Fixed header — always visible */}
+          <View style={styles.modalUserBlock}>
+            <View style={[styles.modalAvatar, { backgroundColor: avatarColor }]}>
+              <Text style={styles.modalAvatarText}>{initials}</Text>
+              <View style={styles.modalGenderDot}>
+                <Ionicons name={getGenderIcon(user?.gender)} size={10} color="#fff" />
               </View>
             </View>
+            <View style={styles.modalUserInfo}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.modalName}>{user?.name || 'Student'}</Text>
+                {user?.isAdmin && <Ionicons name="shield-checkmark" size={14} color={COLORS.warning} />}
+              </View>
+              <Text style={styles.modalUsername}>@{username}</Text>
+              <Text style={styles.modalEmail}>{user?.email}</Text>
+            </View>
+          </View>
 
+          {/* Scrollable middle section */}
+          <ScrollView
+            style={styles.modalScrollArea}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+          >
             <View style={styles.modalBadgeRow}>
               <View style={[styles.modalBadge, { backgroundColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '22', borderColor: (user?.isAdmin ? COLORS.warning : COLORS.primary) + '44' }]}>
                 <Ionicons name={user?.isAdmin ? 'shield-checkmark-outline' : 'school-outline'} size={11} color={user?.isAdmin ? COLORS.warning : COLORS.primary} />
@@ -110,14 +112,14 @@ function ProfileModal({ visible, onClose, user, navigation, logout }) {
                 <Ionicons name="chevron-forward" size={14} color={COLORS.textTertiary} />
               </TouchableOpacity>
             ))}
-
-            <View style={styles.modalDivider} />
-
-            <TouchableOpacity style={styles.modalSignOut} onPress={() => { onClose(); logout(); }} activeOpacity={0.8}>
-              <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
-              <Text style={styles.modalSignOutText}>Sign Out</Text>
-            </TouchableOpacity>
           </ScrollView>
+
+          {/* Fixed footer — Sign Out always visible */}
+          <View style={styles.modalDivider} />
+          <TouchableOpacity style={styles.modalSignOut} onPress={() => { onClose(); logout(); }} activeOpacity={0.8}>
+            <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.modalSignOutText}>Sign Out</Text>
+          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
@@ -505,9 +507,24 @@ export default function HomeScreen({ navigation }) {
 
         {/* Stats */}
         <View style={styles.statsRow}>
-          <StatCard label="Events Today" value="3" icon="calendar" color={COLORS.primary} />
-          <StatCard label={user?.isAdmin ? 'Hosted' : 'Registered'} value={user?.isAdmin ? user?.hostedEvents?.length || 3 : user?.registeredEvents?.length || 2} icon={user?.isAdmin ? 'megaphone' : 'checkmark-circle'} color={COLORS.accent} />
-          <StatCard label={user?.isAdmin ? 'This Month' : 'My Points'} value={user?.isAdmin ? '12' : (user?.activityPoints || '0')} icon={user?.isAdmin ? 'trending-up' : 'star'} color={COLORS.warning} />
+          <StatCard
+            label="Events Today"
+            value={user?.isAdmin ? '3' : (user?.registeredEvents?.length ? '3' : '0')}
+            icon="calendar"
+            color={COLORS.primary}
+          />
+          <StatCard
+            label={user?.isAdmin ? 'Hosted' : 'Registered'}
+            value={user?.isAdmin ? (user?.hostedEvents?.length || 3) : (user?.registeredEvents?.length || 0)}
+            icon={user?.isAdmin ? 'megaphone' : 'checkmark-circle'}
+            color={COLORS.accent}
+          />
+          <StatCard
+            label={user?.isAdmin ? 'This Month' : 'My Points'}
+            value={user?.isAdmin ? '12' : (user?.activityPoints || 0)}
+            icon={user?.isAdmin ? 'trending-up' : 'star'}
+            color={COLORS.warning}
+          />
         </View>
 
         {/* Admin quick action */}
@@ -804,9 +821,9 @@ const styles = StyleSheet.create({
   emptyAction: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
 
   // Profile modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-start', paddingTop: 100, paddingHorizontal: SPACING.lg },
-  modalCard: { backgroundColor: '#111130', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', maxHeight: '78%' },
-  modalScrollContent: { paddingBottom: 6 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.97)', justifyContent: 'flex-start', paddingTop: 80, paddingHorizontal: SPACING.lg, paddingBottom: 40 },
+  modalCard: { backgroundColor: '#111130', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', maxHeight: '90%' },
+  modalScrollArea: { flexGrow: 0, flexShrink: 1 },
   modalUserBlock: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, backgroundColor: 'rgba(139,92,246,0.1)' },
   modalAvatar: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 },
   modalAvatarText: { fontSize: 22, fontWeight: '800', color: '#fff' },

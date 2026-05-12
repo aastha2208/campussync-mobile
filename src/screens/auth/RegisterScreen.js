@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, Animated,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, Modal, Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,26 @@ const GENDERS = [
   { id: 'other', label: 'Other', icon: 'person-outline' },
 ];
 
+// BMSCE Branches
+const BRANCHES = [
+  { code: 'CSE', name: 'Computer Science & Engineering' },
+  { code: 'ISE', name: 'Information Science & Engineering' },
+  { code: 'AIML', name: 'AI & Machine Learning' },
+  { code: 'ECE', name: 'Electronics & Communication' },
+  { code: 'EEE', name: 'Electrical & Electronics' },
+  { code: 'ETE', name: 'Electronics & Telecommunication' },
+  { code: 'EIE', name: 'Electronics & Instrumentation' },
+  { code: 'ME', name: 'Mechanical Engineering' },
+  { code: 'CV', name: 'Civil Engineering' },
+  { code: 'CH', name: 'Chemical Engineering' },
+  { code: 'IEM', name: 'Industrial Engineering & Management' },
+  { code: 'BT', name: 'Biotechnology' },
+  { code: 'MD', name: 'Medical Electronics' },
+  { code: 'AS', name: 'Aerospace Engineering' },
+];
+
+const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
+
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
   const insets = useSafeAreaInsets();
@@ -28,6 +48,8 @@ export default function RegisterScreen({ navigation }) {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [branchPickerVisible, setBranchPickerVisible] = useState(false);
+  const [semPickerVisible, setSemPickerVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -66,6 +88,12 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await register({ ...form, gender, role: 'student', college: 'BMSCE' });
+      // Success — navigate back to login with a confirmation message
+      Alert.alert(
+        '✅ Account Created!',
+        `Welcome to CampusSync, ${form.name.split(' ')[0]}! Please log in with your email and password to continue.`,
+        [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
+      );
     } catch (err) {
       Alert.alert('Registration Failed', err.message || 'Please try again.');
     } finally {
@@ -75,6 +103,69 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
+      {/* Branch Picker Modal */}
+      <Modal visible={branchPickerVisible} transparent animationType="fade" onRequestClose={() => setBranchPickerVisible(false)}>
+        <Pressable style={styles.pickerOverlay} onPress={() => setBranchPickerVisible(false)}>
+          <Pressable style={styles.pickerCard} onPress={(e) => e.stopPropagation && e.stopPropagation()}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Select Your Branch</Text>
+              <TouchableOpacity onPress={() => setBranchPickerVisible(false)} style={styles.pickerClose}>
+                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 440 }}>
+              {BRANCHES.map(b => {
+                const selected = form.branch === b.code;
+                return (
+                  <TouchableOpacity
+                    key={b.code}
+                    activeOpacity={0.7}
+                    onPress={() => { set('branch', b.code); setBranchPickerVisible(false); }}
+                    style={[styles.pickerRow, selected && styles.pickerRowSelected]}
+                  >
+                    <View style={[styles.pickerCode, selected && { backgroundColor: COLORS.primary }]}>
+                      <Text style={[styles.pickerCodeText, selected && { color: '#fff' }]}>{b.code}</Text>
+                    </View>
+                    <Text style={[styles.pickerRowText, selected && { color: COLORS.primary, fontWeight: '700' }]}>{b.name}</Text>
+                    {selected && <Ionicons name="checkmark" size={16} color={COLORS.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+              <View style={{ height: 20 }} />
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Semester Picker Modal */}
+      <Modal visible={semPickerVisible} transparent animationType="fade" onRequestClose={() => setSemPickerVisible(false)}>
+        <Pressable style={styles.pickerOverlay} onPress={() => setSemPickerVisible(false)}>
+          <Pressable style={[styles.pickerCard, { maxWidth: 320 }]} onPress={(e) => e.stopPropagation && e.stopPropagation()}>
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Select Semester</Text>
+              <TouchableOpacity onPress={() => setSemPickerVisible(false)} style={styles.pickerClose}>
+                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.semGrid}>
+              {SEMESTERS.map(s => {
+                const selected = form.semester === s;
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    activeOpacity={0.8}
+                    onPress={() => { set('semester', s); setSemPickerVisible(false); }}
+                    style={[styles.semChip, selected && styles.semChipSelected]}
+                  >
+                    <Text style={[styles.semChipText, selected && { color: '#fff', fontWeight: '800' }]}>Sem {s}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }]}
@@ -162,23 +253,37 @@ export default function RegisterScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Branch + Semester */}
+            {/* Branch + Semester — both dropdowns */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Branch *</Text>
-                <View style={[styles.inputWrap, errors.branch && styles.inputError]}>
-                  <Ionicons name="git-branch-outline" size={17} color={COLORS.textTertiary} style={styles.icon} />
-                  <TextInput style={styles.input} placeholder="CSE" placeholderTextColor={COLORS.textTertiary} value={form.branch} onChangeText={t => set('branch', t)} autoCapitalize="characters" />
-                </View>
+                <TouchableOpacity
+                  onPress={() => setBranchPickerVisible(true)}
+                  activeOpacity={0.85}
+                  style={[styles.inputWrap, errors.branch && styles.inputError]}
+                >
+                  <Ionicons name="git-branch-outline" size={17} color={form.branch ? COLORS.primary : COLORS.textTertiary} style={styles.icon} />
+                  <Text style={[styles.input, { paddingVertical: 0 }, !form.branch && { color: COLORS.textTertiary }]}>
+                    {form.branch || 'Select branch'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={COLORS.textTertiary} />
+                </TouchableOpacity>
                 {errors.branch && <Text style={styles.errorText}>{errors.branch}</Text>}
               </View>
               <View style={{ width: SPACING.sm }} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Semester</Text>
-                <View style={styles.inputWrap}>
-                  <Ionicons name="layers-outline" size={17} color={COLORS.textTertiary} style={styles.icon} />
-                  <TextInput style={styles.input} placeholder="4" placeholderTextColor={COLORS.textTertiary} value={form.semester} onChangeText={t => set('semester', t)} keyboardType="number-pad" />
-                </View>
+                <TouchableOpacity
+                  onPress={() => setSemPickerVisible(true)}
+                  activeOpacity={0.85}
+                  style={styles.inputWrap}
+                >
+                  <Ionicons name="layers-outline" size={17} color={form.semester ? COLORS.primary : COLORS.textTertiary} style={styles.icon} />
+                  <Text style={[styles.input, { paddingVertical: 0 }, !form.semester && { color: COLORS.textTertiary }]}>
+                    {form.semester ? `Sem ${form.semester}` : 'Select'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={COLORS.textTertiary} />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -283,6 +388,24 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: SPACING.lg },
   backBtn: { marginBottom: SPACING.lg, width: 40 },
+
+  // Branch & Semester picker modals
+  pickerOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.97)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  pickerCard: { width: '100%', maxWidth: 480, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.bgCardBorder, overflow: 'hidden' },
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
+  pickerTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  pickerClose: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.bgInput, alignItems: 'center', justifyContent: 'center' },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingVertical: 12 },
+  pickerRowSelected: { backgroundColor: COLORS.primary + '11' },
+  pickerCode: { minWidth: 52, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.bgInput, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.bgCardBorder },
+  pickerCodeText: { fontSize: 12, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: 0.5 },
+  pickerRowText: { flex: 1, fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+
+  // Semester grid
+  semGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: SPACING.lg },
+  semChip: { paddingHorizontal: 18, paddingVertical: 12, borderRadius: RADIUS.full, backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: COLORS.bgCardBorder, minWidth: 80, alignItems: 'center' },
+  semChipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  semChipText: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   headline: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 6 },
   subtext: { fontSize: 14, color: COLORS.textSecondary, marginBottom: SPACING.lg },
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.bgCardBorder, padding: SPACING.lg, marginBottom: SPACING.lg },

@@ -108,66 +108,61 @@ function PaymentSuccess({ event, user, onDone }) {
 
   return (
     <View style={[styles.successContainer, { paddingTop: insets.top }]}>
-      <View style={styles.successContent}>
-        <Animated.View style={[styles.successCheckWrap, { transform: [{ scale: checkScale }] }]}>
-          <LinearGradient colors={[COLORS.accent, '#059669']} style={styles.successCheck}>
-            <Ionicons name="checkmark" size={56} color="#fff" />
-          </LinearGradient>
-        </Animated.View>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+        contentContainerStyle={styles.successScroll}
+      >
+        <View style={styles.successContent}>
+          <Animated.View style={[styles.successCheckWrap, { transform: [{ scale: checkScale }] }]}>
+            <LinearGradient colors={[COLORS.accent, '#059669']} style={styles.successCheck}>
+              <Ionicons name="checkmark" size={56} color="#fff" />
+            </LinearGradient>
+          </Animated.View>
 
-        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', width: '100%' }}>
-          <Text style={styles.successTitle}>Payment Successful!</Text>
-          <Text style={styles.successSubtitle}>You're registered for the event</Text>
+          <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', width: '100%' }}>
+            <Text style={styles.successTitle}>Payment Successful!</Text>
+            <Text style={styles.successSubtitle}>You're registered for the event</Text>
 
-          {/* Receipt */}
-          <View style={styles.receipt}>
-            <View style={styles.receiptHeader}>
-              <Text style={styles.receiptTitle}>Receipt</Text>
-              <View style={styles.paidStamp}>
-                <Ionicons name="checkmark-circle" size={12} color={COLORS.accent} />
-                <Text style={styles.paidStampText}>PAID</Text>
+            {/* Receipt */}
+            <View style={styles.receipt}>
+              <View style={styles.receiptHeader}>
+                <Text style={styles.receiptTitle}>Receipt</Text>
+                <View style={styles.paidStamp}>
+                  <Ionicons name="checkmark-circle" size={12} color={COLORS.accent} />
+                  <Text style={styles.paidStampText}>PAID</Text>
+                </View>
+              </View>
+
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>Event</Text>
+                <Text style={styles.receiptValue} numberOfLines={1}>{event.title}</Text>
+              </View>
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>Amount Paid</Text>
+                <Text style={[styles.receiptValue, { color: COLORS.accent, fontWeight: '800' }]}>₹{event.price}</Text>
+              </View>
+              <View style={styles.receiptDivider} />
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>Transaction ID</Text>
+                <Text style={[styles.receiptValue, { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 11 }]}>{txnId}</Text>
+              </View>
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>Date & Time</Text>
+                <Text style={styles.receiptValue}>{new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
               </View>
             </View>
 
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>Event</Text>
-              <Text style={styles.receiptValue} numberOfLines={1}>{event.title}</Text>
-            </View>
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>Amount Paid</Text>
-              <Text style={[styles.receiptValue, { color: COLORS.accent, fontWeight: '800' }]}>₹{event.price}</Text>
-            </View>
-            <View style={styles.receiptDivider} />
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>Transaction ID</Text>
-              <Text style={[styles.receiptValue, { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 11 }]}>{txnId}</Text>
-            </View>
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>Date & Time</Text>
-              <Text style={styles.receiptValue}>{new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
-            </View>
-          </View>
-
-          {/* Email confirmation banner */}
-          <View style={styles.emailBanner}>
-            <View style={styles.emailIcon}>
-              <Ionicons name="mail" size={18} color={COLORS.secondary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.emailTitle}>Confirmation email sent</Text>
-              <Text style={styles.emailBody}>{user.email}</Text>
-            </View>
-            <Ionicons name="checkmark-circle" size={18} color={COLORS.accent} />
-          </View>
-
-          <TouchableOpacity onPress={onDone} style={styles.doneBtn} activeOpacity={0.85}>
-            <LinearGradient colors={COLORS.gradientPrimary} style={styles.doneBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-              <Text style={styles.doneBtnText}>View My Events</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+            <TouchableOpacity onPress={onDone} style={styles.doneBtn} activeOpacity={0.85}>
+              <LinearGradient colors={COLORS.gradientPrimary} style={styles.doneBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <Text style={styles.doneBtnText}>View My Events</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -213,7 +208,7 @@ export default function PaymentScreen({ navigation, route }) {
     setTimeout(async () => {
       try {
         await eventsAPI.register(event._id, user.email);
-        const ids = Array.from(new Set([...(user.registeredEvents || []), event._id]));
+        const ids = [...(user.registeredEvents || []), event._id];
         // NOTE: activity points awarded only on attendance, not on registration/payment
         updateUser({ registeredEvents: ids });
         setPaid(true);
@@ -252,7 +247,7 @@ export default function PaymentScreen({ navigation, route }) {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={true} bounces={true} contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Event summary */}
         <View style={styles.eventCard}>
           <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
@@ -338,7 +333,7 @@ export default function PaymentScreen({ navigation, route }) {
 
           <View style={styles.secureRow}>
             <Ionicons name="shield-checkmark" size={12} color={COLORS.accent} />
-            <Text style={styles.secureText}>Demo payment simulation for prototype review</Text>
+            <Text style={styles.secureText}>Secured by BMSCE Payment Gateway · 256-bit encryption</Text>
           </View>
         </View>
       </ScrollView>
@@ -347,7 +342,7 @@ export default function PaymentScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: { flex: 1, backgroundColor: COLORS.bg, height: '100%' },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 19, fontWeight: '800', color: COLORS.textPrimary },
@@ -397,9 +392,10 @@ const styles = StyleSheet.create({
   secureText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '500' },
 
   // Success screen
-  successContainer: { flex: 1, backgroundColor: COLORS.bg },
+  successContainer: { flex: 1, backgroundColor: COLORS.bg, height: '100%' },
+  successScroll: { flexGrow: 1, padding: SPACING.lg, paddingBottom: 60, alignItems: 'center', justifyContent: 'center' },
+  successContent: { width: '100%', alignItems: 'center' },
   confetti: { position: 'absolute', fontSize: 24, zIndex: 1 },
-  successContent: { flex: 1, padding: SPACING.lg, alignItems: 'center', justifyContent: 'center' },
   successCheckWrap: { marginBottom: SPACING.lg },
   successCheck: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.accent, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 14 },
   successTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },

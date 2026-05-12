@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3000';
 
 // ─── 6 CLUBS at BMSCE ────────────────────────────────────────────────────────
 export const CLUBS = [
@@ -16,18 +16,18 @@ export const CLUBS = [
 
 // ─── 12 ADMIN EMAILS — 2 per club ────────────────────────────────────────────
 export const ADMINS = [
-  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1' },
-  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2' },
-  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1' },
-  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2' },
-  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1' },
-  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2' },
-  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1' },
-  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2' },
-  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1' },
-  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2' },
-  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1' },
-  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2' },
+  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1', password: 'ieee1.bms@1946' },
+  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2', password: 'ieee2.bms@1946' },
+  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1', password: 'aiml1.bms@1946' },
+  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2', password: 'aiml2.bms@1946' },
+  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1', password: 'cult1.bms@1946' },
+  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2', password: 'cult2.bms@1946' },
+  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1', password: 'spo1.bms@1946' },
+  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2', password: 'spo2.bms@1946' },
+  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1', password: 'photo1.bms@1946' },
+  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2', password: 'photo2.bms@1946' },
+  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1', password: 'lit1.bms@1946' },
+  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2', password: 'lit2.bms@1946' },
 ];
 
 export const ADMIN_EMAILS = ADMINS.map(a => a.email);
@@ -315,42 +315,44 @@ let MOCK_NOTIFICATIONS = [
 ];
 
 // ─── PASSWORD STORE (in-memory + AsyncStorage persistence) ───────────────────
-// In-memory user store
-let REGISTERED_USERS = {}; // { email: { passwordHash, name, branch, semester, gender, registeredAt } }
 
-// Lightweight hashing for offline demo mode; production auth must be backend-only.
-const hashPassword = (value) => {
-  const input = String(value || '');
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = ((hash << 5) - hash) + input.charCodeAt(i);
-    hash |= 0;
-  }
-  return `h_${Math.abs(hash)}`;
-};
+// In-memory user store
+let REGISTERED_USERS = {}; // { email: { password, name, branch, semester, gender, registeredAt } }
 
 // Load registered users from AsyncStorage on startup
-const loadUsersFromStorage = async () => {
+// This returns a promise so we can await it before any auth operation
+const STORAGE_LOAD_PROMISE = (async () => {
   try {
     const stored = await AsyncStorage.getItem('cs_registered_users');
-    if (stored) REGISTERED_USERS = JSON.parse(stored);
+    if (stored) {
+      REGISTERED_USERS = JSON.parse(stored);
+      console.log('[Auth] Loaded', Object.keys(REGISTERED_USERS).length, 'registered users from storage');
+    } else {
+      console.log('[Auth] No previously registered users found');
+    }
   } catch (e) {
-    console.log('Could not load users:', e);
+    console.log('[Auth] Could not load users:', e);
   }
-};
-loadUsersFromStorage();
+})();
 
 const saveUsersToStorage = async () => {
   try {
     await AsyncStorage.setItem('cs_registered_users', JSON.stringify(REGISTERED_USERS));
+    console.log('[Auth] Saved', Object.keys(REGISTERED_USERS).length, 'users to storage');
   } catch (e) {
-    console.log('Could not save users:', e);
+    console.log('[Auth] Could not save users:', e);
   }
 };
+
+// Helper: ensure storage is loaded before proceeding
+const ensureStorageReady = () => STORAGE_LOAD_PROMISE;
 
 // ─── AUTH API ────────────────────────────────────────────────────────────────
 export const authAPI = {
   login: async (email, password, role) => {
+    // Wait for AsyncStorage to load registered users first (prevents race condition on first render)
+    await ensureStorageReady();
+
     try {
       const res = await api.post('/api/auth/login', { email, password, role });
       return res.data;
@@ -371,9 +373,38 @@ export const authAPI = {
         throw new Error('This is an admin email. Please select Admin role.');
       }
 
-      // ADMIN AUTHENTICATION (mock fallback disabled for security)
+      // ADMIN AUTHENTICATION — each admin has their own unique password
       if (isAdmin) {
-        throw new Error('Admin login is only available via backend API in secure mode.');
+        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
+        if (!adminInfo) {
+          throw new Error('Admin account not found.');
+        }
+
+        if (password !== adminInfo.password) {
+          throw new Error('Incorrect password. Please contact your club coordinator.');
+        }
+
+        const club = getClubById(adminInfo.clubId);
+
+        return {
+          token: 'mock_jwt_token_' + Date.now(),
+          user: {
+            _id: 'u_' + cleanEmail,
+            name: adminInfo.name,
+            email: cleanEmail,
+            role: 'admin',
+            isAdmin: true,
+            clubId: adminInfo.clubId,
+            clubName: club?.name || null,
+            college: 'BMSCE',
+            branch: 'Admin',
+            semester: '-',
+            registeredEvents: [],
+            hostedEvents: MOCK_EVENTS.filter(e => e.clubId === adminInfo.clubId).map(e => e._id),
+            activityPoints: 0,
+            avatar: null,
+          },
+        };
       }
 
       // STUDENT AUTHENTICATION
@@ -382,7 +413,7 @@ export const authAPI = {
         throw new Error('No account found for this email. Please register first.');
       }
 
-      if (userRecord.passwordHash !== hashPassword(password)) {
+      if (userRecord.password !== password) {
         throw new Error('Incorrect password. Please try again.');
       }
 
@@ -402,7 +433,7 @@ export const authAPI = {
           semester: userRecord.semester || '4',
           gender: userRecord.gender || 'other',
           username: userRecord.username || null,
-          registeredEvents: ['e1', 'e7'], // mock pre-registrations for demo
+          registeredEvents: [], // Real registrations only — no mock data
           hostedEvents: [],
           activityPoints: 0,
           avatar: null,
@@ -412,6 +443,9 @@ export const authAPI = {
   },
 
   register: async (userData) => {
+    // Wait for AsyncStorage to load registered users first
+    await ensureStorageReady();
+
     try {
       const res = await api.post('/api/auth/register', userData);
       return res.data;
@@ -428,9 +462,9 @@ export const authAPI = {
         throw new Error('An account with this email already exists. Please go to Login.');
       }
 
-      // Save credentials (never persist plaintext password in AsyncStorage)
+      // Save credentials only — DO NOT auto-login
       REGISTERED_USERS[cleanEmail] = {
-        passwordHash: hashPassword(userData.password),
+        password: userData.password,
         name: userData.name,
         username: userData.username,
         branch: userData.branch,
@@ -440,26 +474,10 @@ export const authAPI = {
       };
       await saveUsersToStorage();
 
+      // Return success WITHOUT a user/token — student must explicitly login
       return {
-        token: 'mock_jwt_token_' + Date.now(),
-        user: {
-          _id: 'u_' + cleanEmail,
-          name: userData.name,
-          username: userData.username,
-          email: cleanEmail,
-          role: 'student',
-          isAdmin: false,
-          clubId: null,
-          clubName: null,
-          branch: userData.branch,
-          semester: userData.semester,
-          gender: userData.gender,
-          college: 'BMSCE',
-          registeredEvents: [],
-          hostedEvents: [],
-          activityPoints: 0,
-          avatar: null,
-        },
+        success: true,
+        message: 'Account created successfully. Please login.',
       };
     }
   },
@@ -524,6 +542,9 @@ export const eventsAPI = {
     let requestedEnd = endTime ? parseTime(endTime) : requestedStart + 180; // fallback: 3 hours
     if (requestedEnd <= requestedStart) requestedEnd = requestedStart + 180; // sanity check
 
+    // Required gap between consecutive events at the same venue (in minutes)
+    const REQUIRED_GAP_MIN = 60;
+
     const conflicts = MOCK_EVENTS.filter(e => {
       if (excludeEventId && e._id === excludeEventId) return false;
 
@@ -542,8 +563,14 @@ export const eventsAPI = {
       let otherEnd = e.endTime ? parseTime(e.endTime) : otherStart + 180;
       if (otherEnd <= otherStart) otherEnd = otherStart + 180;
 
-      // Two ranges overlap if: start1 < end2 AND start2 < end1
-      return requestedStart < otherEnd && otherStart < requestedEnd;
+      // Expand each existing event's time block by REQUIRED_GAP_MIN on both sides.
+      // If the requested range overlaps the buffered range, it's a conflict.
+      // This enforces a 1-hour cushion between back-to-back events.
+      const otherStartBuffered = otherStart - REQUIRED_GAP_MIN;
+      const otherEndBuffered = otherEnd + REQUIRED_GAP_MIN;
+
+      // Standard overlap test on the buffered range
+      return requestedStart < otherEndBuffered && otherStartBuffered < requestedEnd;
     });
 
     return {
@@ -649,9 +676,14 @@ export const eventsAPI = {
     }
   },
 
-  getMyRegistered: async () => {
+  getMyRegistered: async (currentUser) => {
     try { const res = await api.get('/api/events/my/registered'); return res.data; }
-    catch { return { events: MOCK_EVENTS.slice(0, 2) }; }
+    catch {
+      // Return only events the user has actually registered for
+      const registeredIds = currentUser?.registeredEvents || [];
+      const events = MOCK_EVENTS.filter(e => registeredIds.includes(e._id));
+      return { events };
+    }
   },
 
   getMyHosted: async (currentUser) => {

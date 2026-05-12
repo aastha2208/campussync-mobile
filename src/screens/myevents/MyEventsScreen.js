@@ -69,25 +69,38 @@ export default function MyEventsScreen({ navigation }) {
 
   const activeData = { registered, hosted, archived: [] }[activeTab];
 
-  const stats = [
-    { label: 'Registered', value: registered.length, color: COLORS.primary },
-    { label: 'Hosting', value: hosted.length, color: COLORS.accent },
-    { label: 'Completed', value: 2, color: COLORS.secondary },
-  ];
+  // Completed = 0 until attendance is marked (we don't track attendance yet)
+  // Hosting count only shown for admins
+  const stats = user?.isAdmin
+    ? [
+        { label: 'Hosting', value: hosted.length, color: COLORS.accent },
+        { label: 'Total Events', value: hosted.length, color: COLORS.primary },
+        { label: 'Completed', value: 0, color: COLORS.secondary },
+      ]
+    : [
+        { label: 'Registered', value: registered.length, color: COLORS.primary },
+        { label: 'Attended', value: 0, color: COLORS.accent },
+        { label: 'Completed', value: 0, color: COLORS.secondary },
+      ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* Header with back button */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.textSecondary} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>My Events</Text>
           <Text style={styles.subtitle}>Track your campus activity</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Create')} style={styles.createBtn}>
-          <LinearGradient colors={COLORS.gradientPrimary} style={styles.createBtnGrad}>
-            <Ionicons name="add" size={20} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
+        {user?.isAdmin && (
+          <TouchableOpacity onPress={() => navigation.navigate('Create')} style={styles.createBtn}>
+            <LinearGradient colors={COLORS.gradientPrimary} style={styles.createBtnGrad}>
+              <Ionicons name="add" size={20} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -143,7 +156,8 @@ export default function MyEventsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.bgCardBorder },
   title: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary },
   subtitle: { fontSize: 13, color: COLORS.textTertiary, marginTop: 2 },
   createBtn: { width: 44, height: 44, borderRadius: 22 },
