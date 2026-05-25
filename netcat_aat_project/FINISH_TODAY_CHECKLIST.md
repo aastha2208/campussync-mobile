@@ -5,32 +5,39 @@ Team: Tanishk, Aastha, Aditi
 
 ## Priority Order
 
-Follow this order so the project can be completed quickly.
+### 1. Open the Updated Files
 
-### 1. Read the Demo Guide
+Use these latest detailed files:
+
+- `Secure_Data_Transmission_over_Netcat_Report.docx`
+- `Secure_Data_Transmission_over_Netcat_Presentation.pptx`
+
+The PPT has 25 slides and a network security themed background on every slide.
+
+### 2. Read the Demo Guide
 
 File: `DEMO_GUIDE.md`
 
-Everyone should understand only this core point:
+Core idea:
 
 > Plain Netcat traffic is readable in Wireshark. Encrypted Ncat SSL traffic is not readable.
 
-### 2. Install Tools
+### 3. Install Tools
 
-On Ubuntu/Linux:
+Ubuntu/Linux:
 
 ```bash
 sudo apt update
 sudo apt install netcat-openbsd ncat wireshark openssl -y
 ```
 
-On Windows:
+Windows:
 
 - Install Nmap for Ncat.
 - Install Wireshark.
 - During Wireshark/Npcap setup, enable loopback capture if available.
 
-### 3. Run the Plaintext Demo
+### 4. Run Plaintext Demo
 
 Use port `4444`.
 
@@ -38,9 +45,9 @@ Take screenshots of:
 
 - Receiver terminal
 - Sender terminal
-- Wireshark "Follow TCP Stream" showing readable message
+- Wireshark Follow TCP Stream showing readable message
 
-### 4. Run the Encrypted Demo
+### 5. Run Encrypted Demo
 
 Use port `4445`.
 
@@ -49,27 +56,14 @@ Take screenshots of:
 - Certificate generation command
 - Encrypted receiver terminal
 - Encrypted sender terminal
-- Wireshark "Follow TCP Stream" showing unreadable/encrypted data
+- Wireshark Follow TCP Stream showing unreadable/encrypted data
 
-### 5. Update Report
+### 6. Add Screenshots
 
-File already generated:
+Add screenshots into:
 
-`Secure_Data_Transmission_over_Netcat_Report.docx`
-
-Add your screenshots in the practical demonstration sections or appendix.
-
-### 6. Update PPT
-
-File already generated:
-
-`Secure_Data_Transmission_over_Netcat_Presentation.pptx`
-
-Add 2-4 screenshots:
-
-- Plaintext Wireshark readable message
-- Encrypted Wireshark unreadable traffic
-- Optional terminal screenshots
+- Report practical demonstration sections
+- PPT slide 18 or nearby result slides
 
 ### 7. Practice Presentation
 
@@ -80,12 +74,8 @@ Use:
 
 ## Final Submission Files
 
-Submit these:
-
 1. `Secure_Data_Transmission_over_Netcat_Report.docx`
 2. `Secure_Data_Transmission_over_Netcat_Presentation.pptx`
-3. Screenshots added inside report/PPT
-4. Optional: demo files and commands if professor asks
 
 ## Best One-Line Conclusion
 
