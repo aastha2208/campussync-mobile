@@ -88,16 +88,17 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await register({ ...form, gender, role: 'student', college: 'BMSCE' });
-      // Success — navigate back to login with a confirmation message
-      Alert.alert(
-        '✅ Account Created!',
-        `Welcome to CampusSync, ${form.name.split(' ')[0]}! Please log in with your email and password to continue.`,
-        [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
-      );
-    } catch (err) {
-      Alert.alert('Registration Failed', err.message || 'Please try again.');
-    } finally {
+      const cleanEmail = form.email.trim().toLowerCase();
+      const firstName = form.name.trim().split(' ')[0] || 'Student';
       setLoading(false);
+      navigation.replace('Login', {
+        registered: true,
+        email: cleanEmail,
+        name: firstName,
+      });
+    } catch (err) {
+      setLoading(false);
+      Alert.alert('Registration Failed', err.message || 'Please try again.');
     }
   };
 
