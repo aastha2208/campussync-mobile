@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, KeyboardAvoidingView, Platform, Modal, Pressable,
@@ -404,6 +404,8 @@ export default function CreateEventScreen({ navigation }) {
   const [deadlinePickerVisible, setDeadlinePickerVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(null); // 'start' or 'end' or null
   const [venuePickerVisible, setVenuePickerVisible] = useState(false);
+  const [createdEventTitle, setCreatedEventTitle] = useState('');
+  const successTimerRef = useRef(null);
 
   // Live check room conflicts when venue/date/time changes
   useEffect(() => {
@@ -425,6 +427,12 @@ export default function CreateEventScreen({ navigation }) {
     }, 500);
     return () => clearTimeout(timer);
   }, [form.location, form.date, form.time, form.endTime]);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
 
   const set = (k, v) => {
     setForm(p => ({ ...p, [k]: v }));
@@ -491,11 +499,12 @@ export default function CreateEventScreen({ navigation }) {
         imageUrl: form.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600',
       };
       await eventsAPI.create(payload, user);
-      Alert.alert(
-        '🎉 Event Created!',
-        `"${form.title}" has been posted under ${user.clubName}. All BMSCE students will be notified.`,
-        [{ text: 'View Events', onPress: () => navigation.navigate('Home') }]
-      );
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      setCreatedEventTitle(form.title);
+      successTimerRef.current = setTimeout(() => {
+        setCreatedEventTitle('');
+        navigation.navigate('MyEvents', { screen: 'MyEventsMain' });
+      }, 1200);
     } catch (e) {
       Alert.alert('Error', e.message || 'Could not create event.');
     } finally {
@@ -543,6 +552,23 @@ export default function CreateEventScreen({ navigation }) {
         onSelect={(v) => set('location', v)}
         selectedVenue={form.location}
       />
+      <Modal visible={!!createdEventTitle} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.successOverlay}>
+          <View style={styles.successCard}>
+            <LinearGradient colors={[COLORS.accent, '#059669']} style={styles.successIcon}>
+              <Ionicons name="checkmark" size={38} color="#fff" />
+            </LinearGradient>
+            <Text style={styles.successTitle}>Event Created!</Text>
+            <Text style={styles.successBody} numberOfLines={2}>
+              "{createdEventTitle}" has been posted under {user.clubName}.
+            </Text>
+            <View style={styles.successRedirectRow}>
+              <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
+              <Text style={styles.successRedirectText}>Taking you to your events...</Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
@@ -802,7 +828,7 @@ export default function CreateEventScreen({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity onPress={handleSubmit} disabled={loading || roomConflict.hasConflict} activeOpacity={0.85}>
+          <TouchableOpacity onPress={handleSubmit} disabled={loading || roomConflict.hasConflict || !!createdEventTitle} activeOpacity={0.85}>
             <LinearGradient
               colors={roomConflict.hasConflict ? ['#475569', '#64748B'] : [COLORS.warning, '#F59E0B']}
               style={[styles.submitBtn, roomConflict.hasConflict && { opacity: 0.6 }]}
@@ -833,6 +859,13 @@ const styles = StyleSheet.create({
   headerIcon: { width: 44, height: 44, borderRadius: 22 },
   headerIconGrad: { flex: 1, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: SPACING.lg },
+  successOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.82)', alignItems: 'center', justifyContent: 'center', padding: SPACING.lg },
+  successCard: { width: '100%', maxWidth: 340, backgroundColor: '#11112d', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.accent + '55', padding: SPACING.xl, alignItems: 'center' },
+  successIcon: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
+  successTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
+  successBody: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 19, marginBottom: SPACING.md },
+  successRedirectRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.primary + '18', borderWidth: 1, borderColor: COLORS.primary + '33' },
+  successRedirectText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
 
   // Picker buttons (replace TextInputs)
   pickerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, minHeight: 50 },
