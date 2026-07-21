@@ -25,12 +25,9 @@ const ROLES = [
   { id: 'admin', label: 'Admin', icon: 'shield-checkmark', desc: 'Manage your club\'s events' },
 ];
 
-export default function LoginScreen({ navigation, route }) {
+export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
-  const registrationSuccess = route?.params?.registered === true;
-  const registeredEmail = route?.params?.email || '';
-  const registeredName = route?.params?.name || '';
   const [role, setRole] = useState('student');
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [email, setEmail] = useState('');
@@ -49,15 +46,6 @@ export default function LoginScreen({ navigation, route }) {
       Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
   }, []);
-
-  useEffect(() => {
-    if (!registeredEmail) return;
-    setRole('student');
-    setSelectedClubId(null);
-    setEmail(registeredEmail);
-    setPassword('');
-    setErrors({});
-  }, [registeredEmail]);
 
   // When admin role + club selected, auto-suggest email format
   useEffect(() => {
@@ -116,7 +104,7 @@ export default function LoginScreen({ navigation, route }) {
       <View style={[styles.glow, { top: -60, left: -60, backgroundColor: 'rgba(139,92,246,0.12)' }]} />
       <View style={[styles.glow, { bottom: 100, right: -80, backgroundColor: 'rgba(59,130,246,0.08)' }]} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 30 }]}
           keyboardShouldPersistTaps="handled"
@@ -137,20 +125,6 @@ export default function LoginScreen({ navigation, route }) {
             <Text style={styles.headline}>Welcome Back 👋</Text>
             <Text style={styles.subtext}>Sign in to your CampusSync account</Text>
           </Animated.View>
-
-          {registrationSuccess && (
-            <Animated.View style={[styles.successBanner, { opacity: fadeAnim }]}>
-              <View style={styles.successIcon}>
-                <Ionicons name="checkmark-circle" size={18} color={COLORS.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.successTitle}>Account created successfully</Text>
-                <Text style={styles.successText}>
-                  {registeredName ? `${registeredName}, enter your password to log in.` : 'Enter your password to log in.'}
-                </Text>
-              </View>
-            </Animated.View>
-          )}
 
           {/* Role Selector */}
           <Animated.View style={[styles.roleSection, { opacity: fadeAnim }]}>
@@ -289,10 +263,6 @@ const styles = StyleSheet.create({
   logoText: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: 2 },
   headline: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, marginTop: 12, marginBottom: 6 },
   subtext: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 20 },
-  successBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: COLORS.accent + '14', borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.accent + '44', padding: 12, marginTop: SPACING.sm },
-  successIcon: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.accent + '22', alignItems: 'center', justifyContent: 'center' },
-  successTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 2 },
-  successText: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17 },
 
   roleSection: { marginTop: SPACING.md },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 10, marginLeft: 4 },

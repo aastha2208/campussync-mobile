@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { notificationsAPI } from '../../services/api';
+import { notificationsAPI, CLUBS } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { COLORS, SPACING, RADIUS } from '../../theme';
 
 const TYPE_CONFIG = {
@@ -48,24 +49,26 @@ function NotifCard({ notif, onPress }) {
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedClub, setSelectedClub] = useState('All');
 
-  const load = async () => {
-    const res = await notificationsAPI.getAll();
+  const load = async (club = selectedClub) => {
+    const res = await notificationsAPI.getAll(user, club);
     setNotifications(res.notifications || []);
     setRefreshing(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [selectedClub]);
 
   const markRead = async (id) => {
-    await notificationsAPI.markRead(id);
+    await notificationsAPI.markRead(id, user);
     setNotifications(ns => ns.map(n => n._id === id ? { ...n, read: true } : n));
   };
 
   const markAllRead = async () => {
-    await notificationsAPI.markAllRead();
+    await notificationsAPI.markAllRead(user, selectedClub);
     setNotifications(ns => ns.map(n => ({ ...n, read: true })));
   };
 
@@ -84,6 +87,25 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clubFilterRow} contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: 8 }}>
+        <TouchableOpacity
+          onPress={() => setSelectedClub('All')}
+          style={[styles.clubChip, selectedClub === 'All' && styles.clubChipActive]}
+        >
+          <Text style={[styles.clubChipText, selectedClub === 'All' && styles.clubChipTextActive]}>All</Text>
+        </TouchableOpacity>
+        {CLUBS.map(club => (
+          <TouchableOpacity
+            key={club.id}
+            onPress={() => setSelectedClub(club.id)}
+            style={[styles.clubChip, selectedClub === club.id && { backgroundColor: club.color + '33', borderColor: club.color }]}
+          >
+            <Ionicons name={club.icon} size={12} color={selectedClub === club.id ? club.color : COLORS.textTertiary} />
+            <Text style={[styles.clubChipText, selectedClub === club.id && { color: club.color, fontWeight: '700' }]}>{club.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       <FlatList
         data={notifications}

@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { eventsAPI } from '../../services/api';
+import { eventsAPI, paymentAPI, notificationsAPI } from '../../services/api';
 import { COLORS, SPACING, RADIUS } from '../../theme';
 
 const { width } = Dimensions.get('window');
@@ -88,7 +88,7 @@ function PseudoQR({ text, size = QR_SIZE }) {
 }
 
 // ─── SUCCESS SCREEN ──────────────────────────────────────────────────────────
-function PaymentSuccess({ event, user, onDone }) {
+function PaymentSuccess({ event, user, onDone, qrDataUrl, emailSent }) {
   const insets = useSafeAreaInsets();
   const checkScale = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -154,6 +154,27 @@ function PaymentSuccess({ event, user, onDone }) {
               </View>
             </View>
 
+            {qrDataUrl && (
+              <View style={styles.realQrCard}>
+                <Text style={styles.qrLabel}>Your entry ticket</Text>
+                <Image source={{ uri: qrDataUrl }} style={{ width: QR_SIZE, height: QR_SIZE }} resizeMode="contain" />
+              </View>
+            )}
+
+            <View style={styles.emailBanner}>
+              <View style={styles.emailIcon}>
+                <Ionicons name={emailSent ? 'mail-open' : 'mail'} size={18} color={COLORS.secondary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.emailTitle}>{emailSent ? 'Ticket emailed to you' : 'Ticket saved to your account'}</Text>
+                <Text style={styles.emailBody}>
+                  {emailSent
+                    ? `Sent to ${user.email} with your QR code attached.`
+                    : 'Backend was unreachable, so this ran in local demo mode.'}
+                </Text>
+              </View>
+            </View>
+
             <TouchableOpacity onPress={onDone} style={styles.doneBtn} activeOpacity={0.85}>
               <LinearGradient colors={COLORS.gradientPrimary} style={styles.doneBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                 <Text style={styles.doneBtnText}>View My Events</Text>
@@ -174,6 +195,8 @@ export default function PaymentScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 min countdown
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -204,19 +227,74 @@ export default function PaymentScreen({ navigation, route }) {
 
   const handlePayment = async () => {
     setPaying(true);
-    // Simulate payment processing
-    setTimeout(async () => {
+
+    // Always keep the local mock registration working — this is what powers
+    // MyEvents/registeredCount elsewhere in the app regardless of whether the
+    // real backend is reachable right now.
+    const registerLocally = async () => {
+      await eventsAPI.register(event._id, user.email);
+      const ids = [...(user.registeredEvents || []), event._id];
+      // NOTE: activity points awarded only on attendance, not on registration/payment
+      updateUser({ registeredEvents: ids });
+    };
+
+    try {
+      // 1. Create a pending registration on the real backend.
+      const { registration } = await paymentAPI.createRegistration({
+        eventId: event._id,
+        eventTitle: event.title,
+        studentEmail: user.email,
+        studentName: user.name,
+        amount: event.price,
+      });
+
+      // 2. Confirm payment (mock gateway today — see backend/README.md for
+      // how this swaps to a real Razorpay/Stripe webhook later). This is what
+      // triggers the signed QR generation + email send, server-side.
+      const confirmRes = await paymentAPI.confirmPayment({
+        registrationId: registration.id,
+        paymentRef: 'mock_' + Date.now(),
+        eventDate: new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+        venue: event.club, // no dedicated venue field on event yet — using club as a stand-in
+      });
+
+      setQrDataUrl(confirmRes.registration.qrDataUrl);
+      setEmailSent(true);
+
+      await registerLocally();
+      await notificationsAPI.notifyPayment({
+        studentEmail: user.email,
+        eventTitle: event.title,
+        clubId: event.clubId,
+        clubName: event.club,
+        amount: event.price,
+        emailSent: true,
+      });
+      setPaid(true);
+    } catch (e) {
+      // Backend unreachable (not running, wrong IP in PAYMENT_API_BASE, or
+      // phone/laptop not on the same Wi-Fi) — fall back to local-only demo
+      // mode instead of blocking the whole app on a dev-only network issue.
+      console.log('[Payment] Real backend unavailable, using local mock:', e.message);
       try {
-        await eventsAPI.register(event._id, user.email);
-        const ids = [...(user.registeredEvents || []), event._id];
-        // NOTE: activity points awarded only on attendance, not on registration/payment
-        updateUser({ registeredEvents: ids });
+        await registerLocally();
+        setEmailSent(false);
+        setQrDataUrl(null);
+        await notificationsAPI.notifyPayment({
+          studentEmail: user.email,
+          eventTitle: event.title,
+          clubId: event.clubId,
+          clubName: event.club,
+          amount: event.price,
+          emailSent: false,
+        });
         setPaid(true);
-      } catch (e) {
+      } catch {
         Alert.alert('Payment Failed', 'Please try again.');
-        setPaying(false);
       }
-    }, 1800);
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleDone = () => {
@@ -225,7 +303,7 @@ export default function PaymentScreen({ navigation, route }) {
   };
 
   // Show success screen
-  if (paid) return <PaymentSuccess event={event} user={user} onDone={handleDone} />;
+  if (paid) return <PaymentSuccess event={event} user={user} onDone={handleDone} qrDataUrl={qrDataUrl} emailSent={emailSent} />;
 
   const upiId = `bmsce.${event.club.toLowerCase().replace(/\s/g, '')}@hdfcbank`;
   const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(event.club)}&am=${event.price}&cu=INR&tn=${encodeURIComponent(event.title)}`;
@@ -410,6 +488,7 @@ const styles = StyleSheet.create({
   receiptLabel: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '500' },
   receiptValue: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 12 },
   receiptDivider: { height: 1, backgroundColor: COLORS.bgCardBorder, marginVertical: 6 },
+  realQrCard: { width: '100%', backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: SPACING.md, alignItems: 'center', gap: 8, marginBottom: SPACING.md },
 
   emailBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', padding: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.secondary + '15', borderWidth: 1, borderColor: COLORS.secondary + '33', marginBottom: SPACING.lg },
   emailIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.secondary + '22', alignItems: 'center', justifyContent: 'center' },

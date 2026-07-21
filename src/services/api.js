@@ -4,6 +4,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
 const BASE_URL = 'http://localhost:3000';
 
+// ─── PAYMENT/QR/EMAIL BACKEND (see /backend folder) ─────────────────────────
+// IMPORTANT: 'localhost' here means "this phone", not your laptop — Expo Go
+// on a physical device can't reach your laptop's localhost. Replace the IP
+// below with your computer's LAN IP (Windows: run `ipconfig`, look for
+// "IPv4 Address" under your active Wi-Fi adapter, e.g. 192.168.1.42).
+// Your phone and laptop must be on the same Wi-Fi network.
+const PAYMENT_API_BASE = 'http://192.168.1.10:5000';
+
+const paymentClient = axios.create({
+  baseURL: PAYMENT_API_BASE,
+  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 // ─── 6 CLUBS at BMSCE ────────────────────────────────────────────────────────
 export const CLUBS = [
   { id: 'ieee', name: 'IEEE BMSCE', icon: 'flash', color: '#3B82F6' },
@@ -309,15 +323,26 @@ let MOCK_EVENTS = [
   },
 ];
 
-let MOCK_NOTIFICATIONS = [
-  { _id: 'n1', title: 'Registration Confirmed!', body: 'You have successfully registered for HackBMSCE 2025.', type: 'success', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
-  { _id: 'n2', title: 'Event Reminder', body: 'Book Club: Sapiens Discussion is in 4 days.', type: 'reminder', read: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
-];
+// (Notifications are now handled by BROADCAST_NOTIFICATIONS / STUDENT_NOTIFICATIONS, defined near eventsAPI below.)
 
 // ─── PASSWORD STORE (in-memory + AsyncStorage persistence) ───────────────────
 
 // In-memory user store
 let REGISTERED_USERS = {}; // { email: { password, name, branch, semester, gender, registeredAt } }
+
+// ─── PER-STUDENT REGISTERED EVENTS (survives logout) ────────────────────────
+// Previously, a student's registeredEvents lived ONLY on the session's user
+// object in AsyncStorage ('cs_user'), which gets wiped entirely on logout —
+// so a student who paid for an event and logged out would come back to find
+// it gone. This separate store, keyed by email, is what login/registration
+// actually reads from now, so it survives logout/login cycles.
+let STUDENT_REGISTRATIONS = {}; // { email: [eventId, eventId, ...] }
+
+// Same split as above, for notifications: BROADCAST is shown to every
+// student (new-event announcements); STUDENT_NOTIFICATIONS is personal
+// (payment confirmations, deadline reminders), keyed by email, persisted.
+let BROADCAST_NOTIFICATIONS = [];
+let STUDENT_NOTIFICATIONS = {}; // { email: [notif, notif, ...] }
 
 // Load registered users from AsyncStorage on startup
 // This returns a promise so we can await it before any auth operation
@@ -333,6 +358,26 @@ const STORAGE_LOAD_PROMISE = (async () => {
   } catch (e) {
     console.log('[Auth] Could not load users:', e);
   }
+
+  try {
+    const storedRegs = await AsyncStorage.getItem('cs_student_registrations');
+    if (storedRegs) {
+      STUDENT_REGISTRATIONS = JSON.parse(storedRegs);
+      console.log('[Events] Loaded registrations for', Object.keys(STUDENT_REGISTRATIONS).length, 'students from storage');
+    }
+  } catch (e) {
+    console.log('[Events] Could not load student registrations:', e);
+  }
+
+  try {
+    const storedNotifs = await AsyncStorage.getItem('cs_student_notifications');
+    if (storedNotifs) {
+      STUDENT_NOTIFICATIONS = JSON.parse(storedNotifs);
+      console.log('[Notifications] Loaded notifications for', Object.keys(STUDENT_NOTIFICATIONS).length, 'students from storage');
+    }
+  } catch (e) {
+    console.log('[Notifications] Could not load student notifications:', e);
+  }
 })();
 
 const saveUsersToStorage = async () => {
@@ -341,6 +386,14 @@ const saveUsersToStorage = async () => {
     console.log('[Auth] Saved', Object.keys(REGISTERED_USERS).length, 'users to storage');
   } catch (e) {
     console.log('[Auth] Could not save users:', e);
+  }
+};
+
+const saveStudentRegistrationsToStorage = async () => {
+  try {
+    await AsyncStorage.setItem('cs_student_registrations', JSON.stringify(STUDENT_REGISTRATIONS));
+  } catch (e) {
+    console.log('[Events] Could not save student registrations:', e);
   }
 };
 
@@ -433,7 +486,7 @@ export const authAPI = {
           semester: userRecord.semester || '4',
           gender: userRecord.gender || 'other',
           username: userRecord.username || null,
-          registeredEvents: [], // Real registrations only — no mock data
+          registeredEvents: STUDENT_REGISTRATIONS[cleanEmail] || [], // Restored from persistent per-student store — survives logout
           hostedEvents: [],
           activityPoints: 0,
           avatar: null,
@@ -484,6 +537,91 @@ export const authAPI = {
 };
 
 // ─── EVENTS API ──────────────────────────────────────────────────────────────
+// ─── PAYMENT API (real backend — see /backend) ──────────────────────────────
+// Talks to the Express server in /backend for the payment confirmation +
+// signed QR + email flow. Unlike the rest of this file, these calls are NOT
+// mocked with a local fallback — if the backend isn't running or PAYMENT_API_BASE
+// isn't set to your laptop's LAN IP, these will throw, and the caller
+// (PaymentScreen) decides whether to fall back to the old local-only mock.
+export const paymentAPI = {
+  createRegistration: async ({ eventId, eventTitle, studentEmail, studentName, amount }) => {
+    const res = await paymentClient.post('/api/registrations', {
+      eventId, eventTitle, studentEmail, studentName, amount,
+    });
+    return res.data; // { registration: {...} }
+  },
+
+  confirmPayment: async ({ registrationId, paymentRef, eventDate, venue }) => {
+    const res = await paymentClient.post('/api/payment/confirm', {
+      registrationId, paymentRef, eventDate, venue,
+    });
+    return res.data; // { alreadyProcessed, registration: { qrDataUrl, ticketId, ... } }
+  },
+};
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+// (Store declarations moved up alongside STUDENT_REGISTRATIONS above.)
+const saveStudentNotificationsToStorage = async () => {
+  try {
+    await AsyncStorage.setItem('cs_student_notifications', JSON.stringify(STUDENT_NOTIFICATIONS));
+  } catch (e) {
+    console.log('[Notifications] Could not save:', e);
+  }
+};
+
+// Deadline reminders — generated on demand (no cron job in a mock backend),
+// so we compute them fresh each time notifications are loaded, but use a
+// stable ID per (event, daysLeft) so we don't create duplicates on every call.
+// Only for events the student HASN'T registered for yet — the reminder is a
+// nudge to register before the deadline closes, not a reminder about
+// something they've already done.
+function generateDeadlineReminders(currentUser) {
+  if (!currentUser?.email || currentUser.isAdmin) return; // admins don't register
+
+  const cleanEmail = currentUser.email.toLowerCase().trim();
+  const registeredIds = currentUser.registeredEvents || [];
+  const existing = STUDENT_NOTIFICATIONS[cleanEmail] || [];
+  const existingIds = new Set(existing.map(n => n._id));
+  let added = false;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  for (const event of MOCK_EVENTS) {
+    if (registeredIds.includes(event._id)) continue;
+    if (!event.registrationDeadline) continue;
+
+    const deadline = new Date(event.registrationDeadline);
+    deadline.setHours(0, 0, 0, 0);
+    const daysLeft = Math.round((deadline - now) / 86400000);
+
+    // Window: 3 days left down to 0 (deadline day itself is the last chance)
+    if (daysLeft < 0 || daysLeft > 3) continue;
+
+    const notifId = `deadline_${event._id}_${daysLeft}`;
+    if (existingIds.has(notifId)) continue;
+
+    const daysText = daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`;
+    existing.unshift({
+      _id: notifId,
+      title: 'Registration Deadline Approaching',
+      body: `Registration for "${event.title}" (${event.club}) closes ${daysText}.`,
+      type: 'reminder',
+      read: false,
+      createdAt: new Date().toISOString(),
+      eventId: event._id,
+      clubId: event.clubId,
+      clubName: event.club,
+    });
+    added = true;
+  }
+
+  if (added) {
+    STUDENT_NOTIFICATIONS[cleanEmail] = existing;
+    saveStudentNotificationsToStorage(); // fire-and-forget, don't block the read
+  }
+}
+
 export const eventsAPI = {
   getAll: async (params = {}) => {
     try {
@@ -611,14 +749,17 @@ export const eventsAPI = {
       };
       MOCK_EVENTS.unshift(newEvent);
 
-      // Auto-notify all students
-      MOCK_NOTIFICATIONS.unshift({
+      // Broadcast to every student — same for everyone, tagged with club so
+      // the notifications screen can filter by club.
+      BROADCAST_NOTIFICATIONS.unshift({
         _id: 'n_' + Date.now(),
         title: '🎉 New Event Posted!',
         body: `"${newEvent.title}" on ${new Date(newEvent.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, hosted by ${newEvent.club}. Earn ${newEvent.activityPoints} activity points!`,
         type: 'info', read: false,
         createdAt: new Date().toISOString(),
         eventId: newEvent._id,
+        clubId: newEvent.clubId,
+        clubName: newEvent.club,
       });
 
       return newEvent;
@@ -640,6 +781,7 @@ export const eventsAPI = {
   },
 
   register: async (eventId, userEmail) => {
+    await ensureStorageReady();
     try { const res = await api.post(`/api/events/${eventId}/register`); return res.data; }
     catch {
       const event = MOCK_EVENTS.find(e => e._id === eventId);
@@ -647,6 +789,16 @@ export const eventsAPI = {
         event.registeredCount += 1;
         if (userEmail && !event.registeredStudents.includes(userEmail)) {
           event.registeredStudents.push(userEmail);
+        }
+      }
+      // Persist to the per-student store (keyed by email) so this survives
+      // logout — separate from the session-only user.registeredEvents copy.
+      if (userEmail) {
+        const cleanEmail = userEmail.toLowerCase().trim();
+        const existing = STUDENT_REGISTRATIONS[cleanEmail] || [];
+        if (!existing.includes(eventId)) {
+          STUDENT_REGISTRATIONS[cleanEmail] = [...existing, eventId];
+          await saveStudentRegistrationsToStorage();
         }
       }
       return { message: 'Registered', event };
@@ -662,6 +814,11 @@ export const eventsAPI = {
         if (userEmail) {
           event.registeredStudents = event.registeredStudents.filter(e => e !== userEmail);
         }
+      }
+      if (userEmail) {
+        const cleanEmail = userEmail.toLowerCase().trim();
+        STUDENT_REGISTRATIONS[cleanEmail] = (STUDENT_REGISTRATIONS[cleanEmail] || []).filter(id => id !== eventId);
+        await saveStudentRegistrationsToStorage();
       }
       return { message: 'Unregistered' };
     }
@@ -698,18 +855,84 @@ export const eventsAPI = {
 };
 
 // ─── NOTIFICATIONS API ───────────────────────────────────────────────────────
+// getAll/markRead/markAllRead now take currentUser, since "personal"
+// notifications (payments, deadline reminders) only make sense per-student.
+// club: optional clubId to filter to a single club's notifications — 'All'
+// or omitted returns everything.
 export const notificationsAPI = {
-  getAll: async () => {
-    try { const res = await api.get('/api/notifications'); return res.data; }
-    catch { return { notifications: MOCK_NOTIFICATIONS }; }
+  getAll: async (currentUser, club) => {
+    await ensureStorageReady();
+    try {
+      const res = await api.get('/api/notifications');
+      return res.data;
+    } catch {
+      generateDeadlineReminders(currentUser); // refresh reminders for this student before reading
+
+      const cleanEmail = currentUser?.email?.toLowerCase().trim();
+      const personal = cleanEmail ? (STUDENT_NOTIFICATIONS[cleanEmail] || []) : [];
+      let merged = [...personal, ...BROADCAST_NOTIFICATIONS]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      if (club && club !== 'All') {
+        merged = merged.filter(n => n.clubId === club);
+      }
+
+      return { notifications: merged };
+    }
   },
-  markRead: async (id) => {
-    try { await api.patch(`/api/notifications/${id}/read`); }
-    catch { const n = MOCK_NOTIFICATIONS.find(n => n._id === id); if (n) n.read = true; }
+
+  markRead: async (id, currentUser) => {
+    try { await api.patch(`/api/notifications/${id}/read`); return; }
+    catch { /* fall through to local mock */ }
+
+    const cleanEmail = currentUser?.email?.toLowerCase().trim();
+    const personal = cleanEmail ? STUDENT_NOTIFICATIONS[cleanEmail] : null;
+    const inPersonal = personal?.find(n => n._id === id);
+    if (inPersonal) {
+      inPersonal.read = true;
+      await saveStudentNotificationsToStorage();
+      return;
+    }
+    const inBroadcast = BROADCAST_NOTIFICATIONS.find(n => n._id === id);
+    if (inBroadcast) inBroadcast.read = true;
   },
-  markAllRead: async () => {
-    try { await api.patch('/api/notifications/read-all'); }
-    catch { MOCK_NOTIFICATIONS.forEach(n => n.read = true); }
+
+  markAllRead: async (currentUser, club) => {
+    try { await api.patch('/api/notifications/read-all'); return; }
+    catch { /* fall through to local mock */ }
+
+    const cleanEmail = currentUser?.email?.toLowerCase().trim();
+    const matchesClub = (n) => !club || club === 'All' || n.clubId === club;
+
+    if (cleanEmail && STUDENT_NOTIFICATIONS[cleanEmail]) {
+      STUDENT_NOTIFICATIONS[cleanEmail].forEach(n => { if (matchesClub(n)) n.read = true; });
+      await saveStudentNotificationsToStorage();
+    }
+    BROADCAST_NOTIFICATIONS.forEach(n => { if (matchesClub(n)) n.read = true; });
+  },
+
+  // Called by PaymentScreen right after a payment attempt (success or local
+  // fallback) — personal to the paying student, never shown to anyone else.
+  notifyPayment: async ({ studentEmail, eventTitle, clubId, clubName, amount, emailSent }) => {
+    await ensureStorageReady();
+    const cleanEmail = (studentEmail || '').toLowerCase().trim();
+    if (!cleanEmail) return;
+
+    const existing = STUDENT_NOTIFICATIONS[cleanEmail] || [];
+    existing.unshift({
+      _id: 'pay_' + Date.now(),
+      title: 'Payment Successful',
+      body: emailSent
+        ? `You paid ₹${amount} for "${eventTitle}". A confirmation email with your QR ticket has been sent to ${studentEmail}.`
+        : `You paid ₹${amount} for "${eventTitle}". Your ticket is saved to your account.`,
+      type: 'success',
+      read: false,
+      createdAt: new Date().toISOString(),
+      clubId,
+      clubName,
+    });
+    STUDENT_NOTIFICATIONS[cleanEmail] = existing;
+    await saveStudentNotificationsToStorage();
   },
 };
 
