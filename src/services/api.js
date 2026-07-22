@@ -2,7 +2,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const BASE_URL = 'http://localhost:3000';
+// Both auth AND payment now live on the same backend (see /backend) — one
+// Express server, multiple route groups (/api/auth, /api/registrations,
+// /api/payment, /api/ticket). Update this to your laptop's LAN IP, same as
+// PAYMENT_API_BASE below.
+const BASE_URL = 'http://192.168.1.10:5000';
 
 // ─── PAYMENT/QR/EMAIL BACKEND (see /backend folder) ─────────────────────────
 // IMPORTANT: 'localhost' here means "this phone", not your laptop — Expo Go
@@ -29,19 +33,24 @@ export const CLUBS = [
 ];
 
 // ─── 12 ADMIN EMAILS — 2 per club ────────────────────────────────────────────
+// NOTE: no passwords here anymore. Admin authentication is verified
+// server-side (backend/src/controllers/authController.js) against
+// bcrypt-hashed passwords in MongoDB — this list is only used client-side to
+// recognize "this email belongs to an admin" (for the login-role check
+// below) and to know each admin's club, not to verify credentials.
 export const ADMINS = [
-  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1', password: 'ieee1.bms@1946' },
-  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2', password: 'ieee2.bms@1946' },
-  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1', password: 'aiml1.bms@1946' },
-  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2', password: 'aiml2.bms@1946' },
-  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1', password: 'cult1.bms@1946' },
-  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2', password: 'cult2.bms@1946' },
-  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1', password: 'spo1.bms@1946' },
-  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2', password: 'spo2.bms@1946' },
-  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1', password: 'photo1.bms@1946' },
-  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2', password: 'photo2.bms@1946' },
-  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1', password: 'lit1.bms@1946' },
-  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2', password: 'lit2.bms@1946' },
+  { email: 'ieee.admin1@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 1' },
+  { email: 'ieee.admin2@bmsce.ac.in', clubId: 'ieee', name: 'IEEE Admin 2' },
+  { email: 'aiml.admin1@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 1' },
+  { email: 'aiml.admin2@bmsce.ac.in', clubId: 'aiml', name: 'AI/ML Admin 2' },
+  { email: 'cult.admin1@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 1' },
+  { email: 'cult.admin2@bmsce.ac.in', clubId: 'cultural', name: 'Cultural Admin 2' },
+  { email: 'spo.admin1@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 1' },
+  { email: 'spo.admin2@bmsce.ac.in', clubId: 'sports', name: 'Sports Admin 2' },
+  { email: 'photo.admin1@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 1' },
+  { email: 'photo.admin2@bmsce.ac.in', clubId: 'photography', name: 'Photography Admin 2' },
+  { email: 'lit.admin1@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 1' },
+  { email: 'lit.admin2@bmsce.ac.in', clubId: 'literary', name: 'Literary Admin 2' },
 ];
 
 export const ADMIN_EMAILS = ADMINS.map(a => a.email);
@@ -406,61 +415,49 @@ export const authAPI = {
     // Wait for AsyncStorage to load registered users first (prevents race condition on first render)
     await ensureStorageReady();
 
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail || !password) {
+      throw new Error('Email and password are required.');
+    }
+
+    const isAdmin = isAdminEmail(cleanEmail);
+
+    // Validate role matches email
+    if (role === 'admin' && !isAdmin) {
+      throw new Error('Only authorized BMSCE club admins can log in as admin.');
+    }
+    if (role !== 'admin' && isAdmin) {
+      throw new Error('This is an admin email. Please select Admin role.');
+    }
+
+    if (isAdmin) {
+      // Admin credentials are verified server-side ONLY now (bcrypt-hashed
+      // in MongoDB — see backend/src/controllers/authController.js).
+      // Deliberately NO local fallback here: there's no password left in
+      // the client bundle to check against, by design — that's the fix for
+      // the plaintext-admin-password issue this used to have.
+      try {
+        const res = await api.post('/api/auth/login', { email: cleanEmail, password, role });
+        return res.data;
+      } catch (err) {
+        if (err.response) {
+          // Backend was reached but rejected the login — surface its real reason
+          // (wrong password, or this email isn't seeded as an admin yet).
+          throw new Error(err.response.data?.error || 'Admin login failed.');
+        }
+        // Backend unreachable (network/IP/offline) — fail closed, not open.
+        throw new Error('Could not reach the server to verify admin login. Check that the backend is running and try again.');
+      }
+    }
+
+    // STUDENT AUTHENTICATION — tries the real backend first, falls back to
+    // the local mock if unreachable. This fallback is safe (unlike the old
+    // admin one) because students choose their own passwords — there's no
+    // shared secret baked into the client to protect.
     try {
-      const res = await api.post('/api/auth/login', { email, password, role });
+      const res = await api.post('/api/auth/login', { email: cleanEmail, password, role });
       return res.data;
     } catch {
-      const cleanEmail = (email || '').toLowerCase().trim();
-
-      if (!cleanEmail || !password) {
-        throw new Error('Email and password are required.');
-      }
-
-      const isAdmin = isAdminEmail(cleanEmail);
-
-      // Validate role matches email
-      if (role === 'admin' && !isAdmin) {
-        throw new Error('Only authorized BMSCE club admins can log in as admin.');
-      }
-      if (role !== 'admin' && isAdmin) {
-        throw new Error('This is an admin email. Please select Admin role.');
-      }
-
-      // ADMIN AUTHENTICATION — each admin has their own unique password
-      if (isAdmin) {
-        const adminInfo = ADMINS.find(a => a.email === cleanEmail);
-        if (!adminInfo) {
-          throw new Error('Admin account not found.');
-        }
-
-        if (password !== adminInfo.password) {
-          throw new Error('Incorrect password. Please contact your club coordinator.');
-        }
-
-        const club = getClubById(adminInfo.clubId);
-
-        return {
-          token: 'mock_jwt_token_' + Date.now(),
-          user: {
-            _id: 'u_' + cleanEmail,
-            name: adminInfo.name,
-            email: cleanEmail,
-            role: 'admin',
-            isAdmin: true,
-            clubId: adminInfo.clubId,
-            clubName: club?.name || null,
-            college: 'BMSCE',
-            branch: 'Admin',
-            semester: '-',
-            registeredEvents: [],
-            hostedEvents: MOCK_EVENTS.filter(e => e.clubId === adminInfo.clubId).map(e => e._id),
-            activityPoints: 0,
-            avatar: null,
-          },
-        };
-      }
-
-      // STUDENT AUTHENTICATION
       const userRecord = REGISTERED_USERS[cleanEmail];
       if (!userRecord) {
         throw new Error('No account found for this email. Please register first.');

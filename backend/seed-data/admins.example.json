@@ -1,0 +1,14 @@
+[
+  { "email": "ieee.admin1@bmsce.ac.in", "name": "IEEE Admin 1", "clubId": "ieee", "clubName": "IEEE BMSCE", "password": "REPLACE_ME" },
+  { "email": "ieee.admin2@bmsce.ac.in", "name": "IEEE Admin 2", "clubId": "ieee", "clubName": "IEEE BMSCE", "password": "REPLACE_ME" },
+  { "email": "aiml.admin1@bmsce.ac.in", "name": "AI/ML Admin 1", "clubId": "aiml", "clubName": "AI/ML Club", "password": "REPLACE_ME" },
+  { "email": "aiml.admin2@bmsce.ac.in", "name": "AI/ML Admin 2", "clubId": "aiml", "clubName": "AI/ML Club", "password": "REPLACE_ME" },
+  { "email": "cult.admin1@bmsce.ac.in", "name": "Cultural Admin 1", "clubId": "cultural", "clubName": "Cultural Club", "password": "REPLACE_ME" },
+  { "email": "cult.admin2@bmsce.ac.in", "name": "Cultural Admin 2", "clubId": "cultural", "clubName": "Cultural Club", "password": "REPLACE_ME" },
+  { "email": "spo.admin1@bmsce.ac.in", "name": "Sports Admin 1", "clubId": "sports", "clubName": "Sports Committee", "password": "REPLACE_ME" },
+  { "email": "spo.admin2@bmsce.ac.in", "name": "Sports Admin 2", "clubId": "sports", "clubName": "Sports Committee", "password": "REPLACE_ME" },
+  { "email": "photo.admin1@bmsce.ac.in", "name": "Photography Admin 1", "clubId": "photography", "clubName": "Photography Club", "password": "REPLACE_ME" },
+  { "email": "photo.admin2@bmsce.ac.in", "name": "Photography Admin 2", "clubId": "photography", "clubName": "Photography Club", "password": "REPLACE_ME" },
+  { "email": "lit.admin1@bmsce.ac.in", "name": "Literary Admin 1", "clubId": "literary", "clubName": "Literary Club", "password": "REPLACE_ME" },
+  { "email": "lit.admin2@bmsce.ac.in", "name": "Literary Admin 2", "clubId": "literary", "clubName": "Literary Club", "password": "REPLACE_ME" }
+]

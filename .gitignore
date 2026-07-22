@@ -8,3 +8,4 @@ web-build/
 # Backend
 backend/node_modules/
 backend/.env
+backend/seed-data/admins.json
