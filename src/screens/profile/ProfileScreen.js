@@ -7,7 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS } from '../../theme';
 
 const AVATAR_COLORS = ['#8B5CF6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#06B6D4','#6366F1'];
 const getAvatarColor = (name = '') => AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length];
@@ -49,8 +50,8 @@ const INFO_PAGES = {
   },
 };
 
-// ─── Menu items (My Points REMOVED) ─────────────────────────────────────────
-const STUDENT_MENU = [
+// ─── Menu items — functions of COLORS now, since the active theme changes ──
+const getStudentMenu = (COLORS) => [
   { id: 'myevents', label: 'My Events', icon: 'calendar', color: COLORS.primary, action: 'navigate', target: 'MyEvents' },
   { id: 'notifications', label: 'Notifications', icon: 'notifications', color: COLORS.accent, action: 'navigate', target: 'Notifications' },
   { id: 'search', label: 'Search Events', icon: 'search', color: COLORS.secondary, action: 'navigate', target: 'Home' },
@@ -60,7 +61,7 @@ const STUDENT_MENU = [
   { id: 'terms', label: 'Terms of Service', icon: 'document-text', color: COLORS.textTertiary, action: 'info' },
 ];
 
-const ADMIN_MENU = [
+const getAdminMenu = (COLORS) => [
   { id: 'myevents', label: 'My Hosted Events', icon: 'megaphone', color: COLORS.warning, action: 'navigate', target: 'MyEvents' },
   { id: 'create', label: 'Create New Event', icon: 'add-circle', color: COLORS.primary, action: 'navigate', target: 'Create' },
   { id: 'stats', label: 'Club Statistics', icon: 'stats-chart', color: COLORS.accent, action: 'navigate', target: 'AdminStats' },
@@ -72,7 +73,7 @@ const ADMIN_MENU = [
 ];
 
 // ─── INFO MODAL ─────────────────────────────────────────────────────────────
-function InfoModal({ visible, onClose, page }) {
+function InfoModal({ visible, onClose, page, COLORS, styles }) {
   const insets = useSafeAreaInsets();
   if (!page) return null;
   const data = INFO_PAGES[page];
@@ -111,6 +112,8 @@ function InfoModal({ visible, onClose, page }) {
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
+  const { COLORS, isDark, toggleTheme } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [infoPage, setInfoPage] = useState(null);
 
@@ -139,20 +142,20 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const MENU = isAdmin ? ADMIN_MENU : STUDENT_MENU;
+  const MENU = isAdmin ? getAdminMenu(COLORS) : getStudentMenu(COLORS);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <InfoModal visible={!!infoPage} onClose={() => setInfoPage(null)} page={infoPage} />
+      <InfoModal visible={!!infoPage} onClose={() => setInfoPage(null)} page={infoPage} COLORS={COLORS} styles={styles} />
 
       <ScrollView
         showsVerticalScrollIndicator={true}
         contentContainerStyle={{ paddingBottom: 140 }}
         bounces={true}
       >
-        {/* Profile Header — purple gradient */}
+        {/* Profile Header */}
         <LinearGradient
-          colors={['rgba(139,92,246,0.25)', 'rgba(139,92,246,0.08)', 'transparent']}
+          colors={COLORS.gradientCard}
           style={styles.header}
         >
           <View style={styles.headerRow}>
@@ -169,10 +172,18 @@ export default function ProfileScreen({ navigation }) {
               )}
               <Text style={styles.email} numberOfLines={1}>{user?.email}</Text>
             </View>
+            <TouchableOpacity
+              onPress={toggleTheme}
+              style={styles.themeToggleBtn}
+              activeOpacity={0.7}
+              accessibilityLabel={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={COLORS.primary} />
+            </TouchableOpacity>
           </View>
         </LinearGradient>
 
-        {/* Badges row — Student + Branch·Sem (BMSCE removed) */}
+        {/* Badges row */}
         <View style={styles.badgesRow}>
           <View style={[styles.badge, { backgroundColor: roleColor + '22', borderColor: roleColor + '44' }]}>
             <Ionicons name={isAdmin ? 'shield-checkmark' : 'school'} size={12} color={roleColor} />
@@ -222,7 +233,7 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
 
   // Header
@@ -234,6 +245,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
   username: { fontSize: 13, color: COLORS.primary, fontWeight: '600', marginTop: 2 },
   email: { fontSize: 12, color: COLORS.textTertiary, marginTop: 2 },
+  themeToggleBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder },
 
   // Badges
   badgesRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder, flexWrap: 'wrap' },

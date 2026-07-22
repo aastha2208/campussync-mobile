@@ -7,8 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { checkPasswordStrength } from '../../services/api';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { SPACING, RADIUS } from '../../theme';
 
 const GENDERS = [
   { id: 'male', label: 'Male', icon: 'man-outline' },
@@ -38,6 +39,8 @@ const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState({
     name: '', username: '', email: '',
@@ -102,7 +105,7 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
+    <LinearGradient colors={COLORS.gradientBg} style={styles.container}>
       {/* Branch Picker Modal */}
       <Modal visible={branchPickerVisible} transparent animationType="fade" onRequestClose={() => setBranchPickerVisible(false)}>
         <Pressable style={styles.pickerOverlay} onPress={() => setBranchPickerVisible(false)}>
@@ -384,13 +387,13 @@ export default function RegisterScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: SPACING.lg },
   backBtn: { marginBottom: SPACING.lg, width: 40 },
 
   // Branch & Semester picker modals
-  pickerOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.97)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  pickerOverlay: { flex: 1, backgroundColor: COLORS.bg === '#080818' ? 'rgba(8,8,24,0.97)' : 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
   pickerCard: { width: '100%', maxWidth: 480, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.bgCardBorder, overflow: 'hidden' },
   pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   pickerTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
@@ -412,18 +415,18 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: SPACING.md },
   row: { flexDirection: 'row', marginBottom: SPACING.md },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, height: 50 },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.bgCardBorder, paddingHorizontal: 12, height: 50 },
   inputError: { borderColor: COLORS.danger },
   icon: { marginRight: 8 },
   input: { flex: 1, color: COLORS.textPrimary, fontSize: 14 },
   errorText: { fontSize: 12, color: COLORS.danger, marginTop: 4, marginLeft: 4 },
   genderRow: { flexDirection: 'row', gap: 8 },
-  genderChip: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  genderChip: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: RADIUS.md, backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: COLORS.bgCardBorder },
   genderChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   genderText: { fontSize: 13, fontWeight: '600', color: COLORS.textTertiary },
 
   // Password strength
-  strengthBlock: { marginTop: -SPACING.sm, marginBottom: SPACING.md, padding: 10, backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  strengthBlock: { marginTop: -SPACING.sm, marginBottom: SPACING.md, padding: 10, backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.bgCardBorder },
   strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
   strengthSeg: { flex: 1, height: 4, borderRadius: 2 },
   strengthLabel: { fontSize: 11, fontWeight: '700', marginLeft: 6, minWidth: 50 },

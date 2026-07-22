@@ -2,22 +2,24 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { SPACING, RADIUS } from '../theme';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const CATEGORY_COLORS = {
-  Tech: COLORS.primary,
-  Cultural: '#EC4899',
-  Sports: '#F59E0B',
-  Workshop: '#10B981',
-  Academic: '#06B6D4',
-  Social: '#8B5CF6',
-  Other: '#6366F1',
-};
-
 export default function CalendarView({ events, onEventPress, registeredEvents = [] }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const CATEGORY_COLORS = {
+    Tech: COLORS.primary,
+    Cultural: '#EC4899',
+    Sports: '#F59E0B',
+    Workshop: '#10B981',
+    Academic: '#06B6D4',
+    Social: '#8B5CF6',
+    Other: '#6366F1',
+  };
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -264,7 +266,7 @@ export default function CalendarView({ events, onEventPress, registeredEvents = 
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { paddingHorizontal: SPACING.lg },
 
   monthHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md, paddingVertical: 4 },

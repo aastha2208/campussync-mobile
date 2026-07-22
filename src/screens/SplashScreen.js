@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
+  const { COLORS, isDark } = useTheme();
+  const styles = getStyles(COLORS);
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.6)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -23,7 +25,7 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
+    <LinearGradient colors={isDark ? ['#0d0d2b', '#080818', '#0a0a1a'] : ['#F0F9FF', '#F5FAFF', '#FFFFFF']} style={styles.container}>
       {/* Background glow */}
       <View style={styles.glowCircle} />
 
@@ -45,14 +47,14 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   glowCircle: {
     position: 'absolute',
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(139,92,246,0.12)',
+    backgroundColor: COLORS.primary + '20',
     top: '30%',
   },
   logoWrap: {
@@ -73,9 +75,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoLetter: { fontSize: 36, fontWeight: '800', color: '#fff', letterSpacing: 2 },
-  title: { fontSize: 32, fontWeight: '800', color: '#fff', letterSpacing: 1, marginBottom: 8 },
+  title: { fontSize: 32, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: 1, marginBottom: 8 },
   subtitle: { fontSize: 15, color: COLORS.textSecondary, letterSpacing: 0.5, marginBottom: 60 },
   dotsRow: { flexDirection: 'row', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.bgCardBorder },
   dotActive: { backgroundColor: COLORS.primary, width: 24, borderRadius: 4 },
 });

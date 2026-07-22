@@ -7,8 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { CLUBS } from '../../services/api';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { SPACING, RADIUS } from '../../theme';
 
 // Map clubId to admin email prefix (e.g. 'cultural' club → 'cult.admin' emails)
 const CLUB_EMAIL_PREFIX = {
@@ -27,6 +28,8 @@ const ROLES = [
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
+  const { COLORS, isDark } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [role, setRole] = useState('student');
   const [selectedClubId, setSelectedClubId] = useState(null);
@@ -100,9 +103,9 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
-      <View style={[styles.glow, { top: -60, left: -60, backgroundColor: 'rgba(139,92,246,0.12)' }]} />
-      <View style={[styles.glow, { bottom: 100, right: -80, backgroundColor: 'rgba(59,130,246,0.08)' }]} />
+    <LinearGradient colors={isDark ? ['#0d0d2b', '#080818', '#0a0a1a'] : ['#F0F9FF', '#F5FAFF', '#FFFFFF']} style={styles.container}>
+      <View style={[styles.glow, { top: -60, left: -60, backgroundColor: COLORS.primary + '1F' }]} />
+      <View style={[styles.glow, { bottom: 100, right: -80, backgroundColor: COLORS.secondary + '14' }]} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
@@ -252,7 +255,7 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: SPACING.lg },
   glow: { position: 'absolute', width: 250, height: 250, borderRadius: 125 },
@@ -268,7 +271,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 10, marginLeft: 4 },
   roleRow: { flexDirection: 'row', gap: 10 },
   roleCard: { flex: 1, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.bgCardBorder, padding: 14, alignItems: 'center', gap: 6 },
-  roleCardActive: { borderColor: COLORS.primary, backgroundColor: 'rgba(139,92,246,0.12)' },
+  roleCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '1F' },
   roleIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   roleLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
   roleDesc: { fontSize: 11, color: COLORS.textTertiary, textAlign: 'center' },
@@ -284,7 +287,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.bgCardBorder, padding: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.md },
   fieldGroup: { marginBottom: SPACING.md },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 14, height: 50 },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.bgCardBorder, paddingHorizontal: 14, height: 50 },
   inputError: { borderColor: COLORS.danger },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, color: COLORS.textPrimary, fontSize: 15 },

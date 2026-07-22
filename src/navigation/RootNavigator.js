@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
-import { COLORS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
@@ -49,6 +49,8 @@ function MyEventsStack() {
 }
 
 function CustomTabBar({ state, descriptors, navigation }) {
+  const { COLORS, isDark } = useTheme();
+  const styles = getTabBarStyles(COLORS, isDark);
   const tabs = [
     { name: 'Home', icon: 'home', iconFilled: 'home' },
     { name: 'MyEvents', icon: 'calendar-outline', iconFilled: 'calendar' },
@@ -126,9 +128,13 @@ export default function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
+const getTabBarStyles = (COLORS, isDark) => StyleSheet.create({
   tabBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  tabBarBlur: { backgroundColor: 'rgba(8,8,24,0.97)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
+  tabBarBlur: {
+    backgroundColor: isDark ? 'rgba(8,8,24,0.97)' : 'rgba(255,255,255,0.97)',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.bgCardBorder,
+  },
   tabBar: { flexDirection: 'row', paddingBottom: 28, paddingTop: 10, paddingHorizontal: 8, alignItems: 'center' },
   tabBtn: { flex: 1, alignItems: 'center', gap: 3 },
   tabLabel: { fontSize: 10, fontWeight: '500', color: COLORS.textTertiary },

@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { SPACING, RADIUS } from '../theme';
 
 /**
  * Reusable empty state component
@@ -22,8 +23,11 @@ export default function EmptyState({
   actionLabel,
   onAction,
   variant = 'default',
-  iconColor = COLORS.primary,
+  iconColor,
 }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const resolvedIconColor = iconColor || COLORS.primary;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
@@ -61,20 +65,20 @@ export default function EmptyState({
       <Animated.View style={{ transform: [{ translateY: float }] }}>
         <View style={styles.iconWrap}>
           <LinearGradient
-            colors={[iconColor + '33', iconColor + '11']}
+            colors={[resolvedIconColor + '33', resolvedIconColor + '11']}
             style={styles.iconBg}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           >
             {emoji ? (
               <Text style={styles.emoji}>{emoji}</Text>
             ) : (
-              <Ionicons name={icon} size={42} color={iconColor} />
+              <Ionicons name={icon} size={42} color={resolvedIconColor} />
             )}
           </LinearGradient>
           {/* Decorative dots */}
-          <View style={[styles.decorDot, { top: 6, right: 12, backgroundColor: iconColor + '88' }]} />
-          <View style={[styles.decorDot, { bottom: 12, left: 4, backgroundColor: iconColor + '66', width: 6, height: 6 }]} />
-          <View style={[styles.decorDot, { top: 28, left: -2, backgroundColor: iconColor + '44', width: 4, height: 4 }]} />
+          <View style={[styles.decorDot, { top: 6, right: 12, backgroundColor: resolvedIconColor + '88' }]} />
+          <View style={[styles.decorDot, { bottom: 12, left: 4, backgroundColor: resolvedIconColor + '66', width: 6, height: 6 }]} />
+          <View style={[styles.decorDot, { top: 28, left: -2, backgroundColor: resolvedIconColor + '44', width: 4, height: 4 }]} />
         </View>
       </Animated.View>
 
@@ -93,7 +97,7 @@ export default function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { alignItems: 'center', paddingVertical: SPACING.xl, paddingHorizontal: SPACING.lg, gap: 8 },
 
   iconWrap: { position: 'relative', marginBottom: SPACING.sm },

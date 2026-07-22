@@ -7,8 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { eventsAPI, paymentAPI, notificationsAPI } from '../../services/api';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { SPACING, RADIUS } from '../../theme';
 
 const { width } = Dimensions.get('window');
 const QR_SIZE = Math.min(width * 0.55, 240);
@@ -56,6 +57,8 @@ function generateQRPattern(text) {
 }
 
 function PseudoQR({ text, size = QR_SIZE }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const grid = generateQRPattern(text);
   const cellSize = size / grid.length;
 
@@ -89,6 +92,8 @@ function PseudoQR({ text, size = QR_SIZE }) {
 
 // ─── SUCCESS SCREEN ──────────────────────────────────────────────────────────
 function PaymentSuccess({ event, user, onDone, qrDataUrl, emailSent }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const checkScale = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -192,6 +197,8 @@ function PaymentSuccess({ event, user, onDone, qrDataUrl, emailSent }) {
 export default function PaymentScreen({ navigation, route }) {
   const { event } = route.params;
   const { user, updateUser } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -419,7 +426,7 @@ export default function PaymentScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, height: '100%' },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -434,7 +441,7 @@ const styles = StyleSheet.create({
   eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   eventMetaText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '500' },
 
-  amountCard: { marginHorizontal: SPACING.lg, marginBottom: SPACING.lg, padding: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: 'rgba(139,92,246,0.1)', borderWidth: 1, borderColor: COLORS.primary + '44', alignItems: 'center', gap: 6 },
+  amountCard: { marginHorizontal: SPACING.lg, marginBottom: SPACING.lg, padding: SPACING.lg, borderRadius: RADIUS.xl, backgroundColor: COLORS.primary + '18', borderWidth: 1, borderColor: COLORS.primary + '44', alignItems: 'center', gap: 6 },
   amountLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   rupeeSign: { fontSize: 28, fontWeight: '800', color: COLORS.textPrimary },

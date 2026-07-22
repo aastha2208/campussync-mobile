@@ -8,13 +8,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { eventsAPI, CLUBS } from '../../services/api';
 import EmptyState from '../../components/EmptyState';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { SPACING, RADIUS } from '../../theme';
 
 const formatDate = d => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
 function EventStatsCard({ event, onPress }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const fillPct = Math.min((event.registeredCount / event.maxCapacity) * 100, 100);
   const fillColor = fillPct > 90 ? COLORS.danger : fillPct > 70 ? COLORS.warning : COLORS.accent;
 
@@ -78,6 +81,8 @@ function EventStatsCard({ event, onPress }) {
 
 export default function AdminStatsScreen({ navigation }) {
   const { user } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [events, setEvents] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -202,7 +207,7 @@ export default function AdminStatsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -233,14 +238,14 @@ const styles = StyleSheet.create({
   cardMetaText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '500' },
   metaDot: { fontSize: 11, color: COLORS.textTertiary, marginHorizontal: 4 },
 
-  statsBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
+  statsBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: 10, backgroundColor: COLORS.bgInput },
   statBlock: { flex: 1, alignItems: 'center', gap: 2 },
   statBig: { fontSize: 18, fontWeight: '800' },
   statSmall: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '600' },
   statDivider: { width: 1, height: 24, backgroundColor: COLORS.bgCardBorder },
 
   capacityRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: SPACING.md, paddingVertical: 8 },
-  capacityBarBg: { flex: 1, height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' },
+  capacityBarBg: { flex: 1, height: 6, backgroundColor: COLORS.bgCardBorder, borderRadius: 3, overflow: 'hidden' },
   capacityFill: { height: '100%', borderRadius: 3 },
   capacityText: { fontSize: 11, fontWeight: '700', minWidth: 32, textAlign: 'right' },
 

@@ -7,11 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { eventsAPI } from '../../services/api';
 import EventCard from '../../components/EventCard';
-import { COLORS, SPACING, RADIUS, CATEGORY_ICONS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS, CATEGORY_ICONS } from '../../theme';
 
 const CATEGORIES = ['All', 'Tech', 'Cultural', 'Sports', 'Workshop', 'Academic', 'Social'];
 
 export default function SearchScreen({ navigation }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const inputRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -125,7 +128,7 @@ export default function SearchScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, gap: SPACING.sm },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

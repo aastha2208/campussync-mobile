@@ -7,7 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EmptyState from '../../components/EmptyState';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS } from '../../theme';
 
 const AVATAR_COLORS = ['#8B5CF6','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#06B6D4','#6366F1'];
 const getAvatarColor = (s = '') => AVATAR_COLORS[(s.charCodeAt(0) || 0) % AVATAR_COLORS.length];
@@ -23,6 +24,8 @@ const fakeRegDate = (idx) => {
 };
 
 function StudentRow({ email, index }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const color = getAvatarColor(email);
   const initial = email.charAt(0).toUpperCase();
   const namePart = email.split('@')[0];
@@ -54,6 +57,8 @@ function StudentRow({ email, index }) {
 
 export default function EventStudentsScreen({ navigation, route }) {
   const event = route.params?.event;
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'az', 'branch'
@@ -118,7 +123,7 @@ export default function EventStudentsScreen({ navigation, route }) {
       </View>
 
       {/* Event summary card */}
-      <LinearGradient colors={['rgba(139,92,246,0.15)', 'rgba(59,130,246,0.05)']} style={styles.summaryCard}>
+      <LinearGradient colors={COLORS.gradientCard} style={styles.summaryCard}>
         <Image source={{ uri: event.imageUrl }} style={styles.summaryImage} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={styles.summaryEventTitle} numberOfLines={1}>{event.title}</Text>
@@ -234,7 +239,7 @@ export default function EventStudentsScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -253,7 +258,7 @@ const styles = StyleSheet.create({
   summaryStat: { flex: 1, alignItems: 'flex-start' },
   summaryStatNum: { fontSize: 16, fontWeight: '800' },
   summaryStatLabel: { fontSize: 9, color: COLORS.textTertiary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-  summaryDivider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.1)' },
+  summaryDivider: { width: 1, height: 26, backgroundColor: COLORS.bgCardBorder },
 
   // Search
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.bgCardBorder, paddingHorizontal: 12, paddingVertical: 10 },
@@ -267,14 +272,14 @@ const styles = StyleSheet.create({
   countText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '600' },
 
   // Column headers
-  colHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: SPACING.lg, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.03)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.bgCardBorder },
+  colHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: SPACING.lg, paddingVertical: 8, backgroundColor: COLORS.bgInput, borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.bgCardBorder },
   colHeaderText: { fontSize: 10, fontWeight: '800', color: COLORS.textTertiary, letterSpacing: 0.5 },
 
   // List
   list: { paddingHorizontal: SPACING.lg, paddingTop: 4 },
 
   // Row
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   rowNum: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '700', width: 30 },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   avatarText: { fontSize: 14, fontWeight: '800', color: '#fff' },

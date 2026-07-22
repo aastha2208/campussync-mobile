@@ -2,14 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADIUS, SPACING, CATEGORY_COLORS, CATEGORY_ICONS } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { RADIUS, SPACING, CATEGORY_ICONS, getCategoryColors } from '../theme';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-function getCapacityColor(count, max) {
+function getCapacityColor(count, max, COLORS) {
   const pct = count / max;
   if (pct >= 0.9) return COLORS.danger;
   if (pct >= 0.7) return COLORS.warning;
@@ -17,9 +18,12 @@ function getCapacityColor(count, max) {
 }
 
 export default function EventCard({ event, onPress, style, variant = 'default' }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const CATEGORY_COLORS = getCategoryColors(COLORS);
   const catColor = CATEGORY_COLORS[event.category] || COLORS.other;
   const catIcon = CATEGORY_ICONS[event.category] || 'grid-outline';
-  const capColor = getCapacityColor(event.registeredCount, event.maxCapacity);
+  const capColor = getCapacityColor(event.registeredCount, event.maxCapacity, COLORS);
   const spotsLeft = event.maxCapacity - event.registeredCount;
 
   if (variant === 'featured') {
@@ -56,7 +60,7 @@ export default function EventCard({ event, onPress, style, variant = 'default' }
             </View>
           </View>
         </LinearGradient>
-        <View style={[styles.featuredBadge, { backgroundColor: 'rgba(139,92,246,0.9)' }]}>
+        <View style={[styles.featuredBadge, { backgroundColor: COLORS.primary + 'E6' }]}>
           <Ionicons name="star" size={11} color="#fff" />
           <Text style={styles.featuredBadgeText}>FEATURED</Text>
         </View>
@@ -135,7 +139,7 @@ export default function EventCard({ event, onPress, style, variant = 'default' }
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   // Featured
   featured: { height: 260, borderRadius: RADIUS.xl, overflow: 'hidden', marginRight: SPACING.md, width: 320, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   featuredImage: { position: 'absolute', width: '100%', height: '100%' },
@@ -168,7 +172,7 @@ const styles = StyleSheet.create({
   orgAvatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.primary + '33', alignItems: 'center', justifyContent: 'center' },
   orgAvatarText: { fontSize: 10, fontWeight: '700', color: COLORS.primary },
   orgName: { fontSize: 12, color: COLORS.textTertiary, flex: 1 },
-  capacityBar: { height: 3, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' },
+  capacityBar: { height: 3, backgroundColor: COLORS.bgCardBorder, borderRadius: 2, overflow: 'hidden' },
   capacityFill: { height: '100%', borderRadius: 2 },
 
   // Small badges

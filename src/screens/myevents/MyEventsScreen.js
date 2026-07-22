@@ -9,8 +9,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { eventsAPI } from '../../services/api';
 import EventCard from '../../components/EventCard';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { SPACING, RADIUS } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const TABS = [
   { id: 'registered', label: 'Registered', icon: 'checkmark-circle-outline' },
@@ -19,6 +20,8 @@ const TABS = [
 ];
 
 function EmptyState({ tab }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const config = {
     registered: { icon: 'calendar-outline', title: 'No events yet', sub: 'Browse events and register to see them here.' },
     hosted: { icon: 'megaphone-outline', title: 'No hosted events', sub: 'Create your first event to get started!' },
@@ -37,6 +40,8 @@ function EmptyState({ tab }) {
 
 export default function MyEventsScreen({ navigation }) {
   const { user } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('registered');
   const [registered, setRegistered] = useState([]);
@@ -154,7 +159,7 @@ export default function MyEventsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.bgCardBorder },

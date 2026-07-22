@@ -8,11 +8,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { eventsAPI, CLUBS } from '../../services/api';
 import EventCard from '../../components/EventCard';
 import CalendarView from '../../components/CalendarView';
 import EmptyState from '../../components/EmptyState';
-import { COLORS, SPACING, RADIUS, CATEGORY_ICONS } from '../../theme';
+import { SPACING, RADIUS, CATEGORY_ICONS } from '../../theme';
 
 const CATEGORIES = ['All', 'Tech', 'Cultural', 'Sports', 'Workshop', 'Academic', 'Social'];
 
@@ -28,6 +29,8 @@ const getAvatarColor = (name = '') => AVATAR_COLORS[(name.charCodeAt(0) || 0) % 
 const getGenderIcon = (g) => g === 'female' ? 'woman' : g === 'male' ? 'man' : 'person';
 
 function StatCard({ label, value, icon, color }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   return (
     <View style={[styles.statCard, { borderColor: color + '33' }]}>
       <View style={[styles.statIcon, { backgroundColor: color + '22' }]}>
@@ -41,6 +44,8 @@ function StatCard({ label, value, icon, color }) {
 
 // ─── Profile Dropdown ────────────────────────────────────────────────────────
 function ProfileModal({ visible, onClose, user, navigation, logout }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const avatarColor = getAvatarColor(user?.name || '');
   const initials = (user?.name || 'U').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   const username = user?.username || user?.name?.split(' ')[0]?.toLowerCase() || 'student';
@@ -128,6 +133,8 @@ function ProfileModal({ visible, onClose, user, navigation, logout }) {
 
 // ─── Filter & Sort Modal ─────────────────────────────────────────────────────
 function FilterModal({ visible, onClose, sortBy, setSortBy, club, setClub }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.filterOverlay} onPress={onClose}>
@@ -189,6 +196,8 @@ function FilterModal({ visible, onClose, sortBy, setSortBy, club, setClub }) {
 // ─── HOME SCREEN ─────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const { user, logout } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const [events, setEvents] = useState([]);
   const [featured, setFeatured] = useState(null);
@@ -582,7 +591,7 @@ export default function HomeScreen({ navigation }) {
                     style={[styles.reminderCard, urgent && styles.reminderCardUrgent]}
                   >
                     <LinearGradient
-                      colors={urgent ? ['rgba(239,68,68,0.2)', 'rgba(245,158,11,0.1)'] : ['rgba(139,92,246,0.18)', 'rgba(59,130,246,0.08)']}
+                      colors={urgent ? ['rgba(239,68,68,0.2)', 'rgba(245,158,11,0.1)'] : COLORS.gradientCard}
                       style={styles.reminderInner}
                     >
                       <View style={styles.reminderTop}>
@@ -716,7 +725,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, paddingBottom: SPACING.sm, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -808,7 +817,7 @@ const styles = StyleSheet.create({
   reminderMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   reminderMetaText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '500', flex: 1 },
   reminderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  reminderClubChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.08)' },
+  reminderClubChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCardBorder },
   reminderClubText: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '700' },
   catScroll: { marginTop: SPACING.sm },
   catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.bgCard, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.bgCardBorder, overflow: 'hidden' },
@@ -821,13 +830,13 @@ const styles = StyleSheet.create({
   emptyAction: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
 
   // Profile modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.97)', justifyContent: 'flex-start', paddingTop: 80, paddingHorizontal: SPACING.lg, paddingBottom: 40 },
-  modalCard: { backgroundColor: '#111130', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', maxHeight: '90%' },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.bg === '#080818' ? 'rgba(8,8,24,0.97)' : 'rgba(0,0,0,0.35)', justifyContent: 'flex-start', paddingTop: 80, paddingHorizontal: SPACING.lg, paddingBottom: 40 },
+  modalCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.surfaceBorder, overflow: 'hidden', maxHeight: '90%' },
   modalScrollArea: { flexGrow: 0, flexShrink: 1 },
-  modalUserBlock: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, backgroundColor: 'rgba(139,92,246,0.1)' },
+  modalUserBlock: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.lg, backgroundColor: COLORS.primary + '18' },
   modalAvatar: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0 },
   modalAvatarText: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  modalGenderDot: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10, backgroundColor: '#EC4899', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#111130' },
+  modalGenderDot: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: 10, backgroundColor: '#EC4899', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.surface },
   modalUserInfo: { flex: 1 },
   modalName: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 2 },
   modalUsername: { fontSize: 13, color: COLORS.primary, fontWeight: '600', marginBottom: 2 },
@@ -835,7 +844,7 @@ const styles = StyleSheet.create({
   modalBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
   modalBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 4, borderRadius: RADIUS.full, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder },
   modalBadgeText: { fontSize: 11, color: COLORS.textTertiary, fontWeight: '600' },
-  modalDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.07)', marginHorizontal: SPACING.lg },
+  modalDivider: { height: 1, backgroundColor: COLORS.bgCardBorder, marginHorizontal: SPACING.lg },
   modalAction: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: 13 },
   modalActionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   modalActionLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
@@ -843,9 +852,9 @@ const styles = StyleSheet.create({
   modalSignOutText: { fontSize: 14, fontWeight: '700', color: COLORS.danger },
 
   // Filter modal
-  filterOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  filterSheet: { backgroundColor: '#111130', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: SPACING.lg, maxHeight: '85%', paddingBottom: 30 },
-  filterHandle: { width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, alignSelf: 'center', marginBottom: SPACING.md },
+  filterOverlay: { flex: 1, backgroundColor: COLORS.bg === '#080818' ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+  filterSheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: SPACING.lg, maxHeight: '85%', paddingBottom: 30 },
+  filterHandle: { width: 40, height: 4, backgroundColor: COLORS.bgCardBorder, borderRadius: 2, alignSelf: 'center', marginBottom: SPACING.md },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
   filterTitle: { fontSize: 19, fontWeight: '800', color: COLORS.textPrimary },
   filterReset: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },

@@ -8,7 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { eventsAPI, CLUBS } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, SPACING, RADIUS, CATEGORY_COLORS, CATEGORY_ICONS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS, getCategoryColors, CATEGORY_ICONS } from '../../theme';
 
 const CATEGORIES = ['Tech', 'Cultural', 'Sports', 'Workshop', 'Academic', 'Social', 'Other'];
 const POINTS_OPTIONS = [2, 3, 4, 5];
@@ -106,6 +107,8 @@ const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── DATE PICKER COMPONENT ───────────────────────────────────────────────────
 function DatePickerModal({ visible, onClose, onSelect, selectedDate, minDate, maxDate, title = 'Select Date' }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -220,6 +223,8 @@ function DatePickerModal({ visible, onClose, onSelect, selectedDate, minDate, ma
 
 // ─── TIME PICKER COMPONENT ───────────────────────────────────────────────────
 function TimePickerModal({ visible, onClose, onSelect, selectedTime, title = 'Select Time' }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
@@ -256,6 +261,8 @@ function TimePickerModal({ visible, onClose, onSelect, selectedTime, title = 'Se
 
 // ─── VENUE PICKER COMPONENT ──────────────────────────────────────────────────
 function VenuePickerModal({ visible, onClose, onSelect, selectedVenue }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const [search, setSearch] = useState('');
 
   const filteredGroups = VENUE_GROUPS.map(group => ({
@@ -334,6 +341,8 @@ function VenuePickerModal({ visible, onClose, onSelect, selectedVenue }) {
 
 // ─── ADMIN-ONLY BLOCKER ──────────────────────────────────────────────────────
 function AdminOnlyView({ navigation }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.lockedContainer, { paddingTop: insets.top }]}>
@@ -371,6 +380,9 @@ function AdminOnlyView({ navigation }) {
 
 export default function CreateEventScreen({ navigation }) {
   const { user } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const CATEGORY_COLORS = getCategoryColors(COLORS);
   const insets = useSafeAreaInsets();
 
   // GATE: only admins past this point
@@ -822,7 +834,7 @@ export default function CreateEventScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder },
@@ -844,7 +856,7 @@ const styles = StyleSheet.create({
   timeValue: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginTop: 1 },
 
   // Modal overlay
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(8,8,24,0.97)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  modalOverlay: { flex: 1, backgroundColor: COLORS.bg === '#080818' ? 'rgba(8,8,24,0.97)' : 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   modalTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
   modalCloseBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.bgInput, alignItems: 'center', justifyContent: 'center' },

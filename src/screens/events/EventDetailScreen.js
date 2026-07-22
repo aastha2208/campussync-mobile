@@ -7,8 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { eventsAPI } from '../../services/api';
-import { COLORS, SPACING, RADIUS, CATEGORY_COLORS, CATEGORY_ICONS } from '../../theme';
+import { SPACING, RADIUS, getCategoryColors, CATEGORY_ICONS } from '../../theme';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = 280;
@@ -45,6 +46,8 @@ const showAlert = (title, message, onClose) => {
 };
 
 function InfoCard({ icon, color, label, value }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   return (
     <View style={styles.infoCard}>
       <View style={[styles.infoIcon, { backgroundColor: color + '22' }]}>
@@ -59,6 +62,9 @@ function InfoCard({ icon, color, label, value }) {
 export default function EventDetailScreen({ navigation, route }) {
   const event = route.params?.event;
   const { user, updateUser } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const CATEGORY_COLORS = getCategoryColors(COLORS);
   const insets = useSafeAreaInsets();
   const [registered, setRegistered] = useState(user?.registeredEvents?.includes(event?._id));
   const [regLoading, setRegLoading] = useState(false);
@@ -311,7 +317,7 @@ export default function EventDetailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   stickyHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 99, backgroundColor: COLORS.bg + 'F5', flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingBottom: 12, gap: 12 },
   stickyBack: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.bgCard, alignItems: 'center', justifyContent: 'center' },
@@ -347,7 +353,7 @@ const styles = StyleSheet.create({
   capacityHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   capacityLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   capacityCount: { fontSize: 14 },
-  capacityBarBg: { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  capacityBarBg: { height: 8, backgroundColor: COLORS.bgCardBorder, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   capacityBarFill: { height: '100%', borderRadius: 4 },
   capacityStatus: { fontSize: 12, color: COLORS.textSecondary },
   section: { marginBottom: SPACING.lg },

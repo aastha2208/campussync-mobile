@@ -7,14 +7,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { notificationsAPI, CLUBS } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS } from '../../theme';
 
-const TYPE_CONFIG = {
+const getTypeConfig = (COLORS) => ({
   success: { icon: 'checkmark-circle', color: COLORS.accent, bg: COLORS.accent + '22' },
   reminder: { icon: 'alarm', color: COLORS.warning, bg: COLORS.warning + '22' },
   warning: { icon: 'warning', color: COLORS.danger, bg: COLORS.danger + '22' },
   info: { icon: 'information-circle', color: COLORS.secondary, bg: COLORS.secondary + '22' },
-};
+});
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr);
@@ -27,6 +28,9 @@ function timeAgo(dateStr) {
 }
 
 function NotifCard({ notif, onPress }) {
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
+  const TYPE_CONFIG = getTypeConfig(COLORS);
   const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG.info;
   return (
     <TouchableOpacity
@@ -50,6 +54,8 @@ function NotifCard({ notif, onPress }) {
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { COLORS } = useTheme();
+  const styles = getStyles(COLORS);
   const [notifications, setNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedClub, setSelectedClub] = useState('All');
@@ -130,7 +136,7 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder },
   title: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary },

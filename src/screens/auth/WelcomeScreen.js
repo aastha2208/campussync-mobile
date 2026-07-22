@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, Dimensions }
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADIUS } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { SPACING, RADIUS } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }) {
+  const { COLORS, isDark } = useTheme();
+  const styles = getStyles(COLORS);
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -28,10 +31,10 @@ export default function WelcomeScreen({ navigation }) {
   ];
 
   return (
-    <LinearGradient colors={['#0d0d2b', '#080818', '#0a0a1a']} style={styles.container}>
+    <LinearGradient colors={isDark ? ['#0d0d2b', '#080818', '#0a0a1a'] : ['#F0F9FF', '#F5FAFF', '#FFFFFF']} style={styles.container}>
       {/* Background glows */}
-      <View style={[styles.glow, { top: 80, left: -80, backgroundColor: 'rgba(139,92,246,0.15)' }]} />
-      <View style={[styles.glow, { bottom: 200, right: -100, backgroundColor: 'rgba(59,130,246,0.10)' }]} />
+      <View style={[styles.glow, { top: 80, left: -80, backgroundColor: COLORS.primary + '26' }]} />
+      <View style={[styles.glow, { bottom: 200, right: -100, backgroundColor: COLORS.secondary + '1A' }]} />
 
       <View style={[styles.content, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 30 }]}>
         {/* Logo */}
@@ -101,7 +104,7 @@ export default function WelcomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS) => StyleSheet.create({
   container: { flex: 1 },
   glow: { position: 'absolute', width: 280, height: 280, borderRadius: 140 },
   content: { flex: 1, paddingHorizontal: SPACING.lg, alignItems: 'center', justifyContent: 'space-between' },
