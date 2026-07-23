@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Express server, multiple route groups (/api/auth, /api/registrations,
 // /api/payment, /api/ticket). Update this to your laptop's LAN IP, same as
 // PAYMENT_API_BASE below.
-const BASE_URL = 'http://192.168.1.10:5000';
+const BASE_URL = 'https://campussync-backend-pzqp.onrender.com';
 
 // ─── PAYMENT/QR/EMAIL BACKEND (see /backend folder) ─────────────────────────
 // IMPORTANT: 'localhost' here means "this phone", not your laptop — Expo Go
@@ -14,7 +14,7 @@ const BASE_URL = 'http://192.168.1.10:5000';
 // below with your computer's LAN IP (Windows: run `ipconfig`, look for
 // "IPv4 Address" under your active Wi-Fi adapter, e.g. 192.168.1.42).
 // Your phone and laptop must be on the same Wi-Fi network.
-const PAYMENT_API_BASE = 'http://192.168.1.10:5000';
+const PAYMENT_API_BASE = 'https://campussync-backend-pzqp.onrender.com';
 
 const paymentClient = axios.create({
   baseURL: PAYMENT_API_BASE,
